@@ -5,19 +5,24 @@ import { CashEntryCard } from '@/components/cash-entry-card';
 import { DailySummaryCard } from "@/components/daily-summary-card";
 import { GreetingHeader } from '@/components/greeting-header';
 import { RetroactiveEntryCard } from '@/components/retroactive-entry-card';
-import { TOTAL_RESERVA_DIARIA } from "@/constants/cashClosing";
+import { TOTAL_RESERVA_DIARIA, WEEKLY_DATA } from '@/constants/cashClosing';
 import type { CashEntry, DailySummary } from '@/types/cashClosing';
 
+const TODAY_INDEX = 3;
+const todayData = WEEKLY_DATA[TODAY_INDEX];
+
 const INITIAL_CASH: CashEntry = {
-  dinheiroGaveta: 0,
+  dinheiroGaveta: todayData.valor,
   cartao: 0,
   pix: 0,
 };
 
 export const FechamentoCaixaForm = () => {
   const [cashEntry, setCashEntry] = useState<CashEntry>(INITIAL_CASH);
-  const [expenseValue, setExpenseValue] = useState(0);
-  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseValue, setExpenseValue] = useState(todayData.saida);
+  const [expenseDescription, setExpenseDescription] = useState(
+    'Compras de reposição pães e feira',
+  );
   const [retroactiveOpen, setRetroactiveOpen] = useState(false);
 
   const handleCashChange = useCallback((values: CashEntry) => {

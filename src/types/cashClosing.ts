@@ -21,6 +21,7 @@ export interface WeeklyDay {
   dia: string;
   diaAbreviado: string;
   valor: number;
+  saida: number;
 }
 
 export interface FixedExpense {

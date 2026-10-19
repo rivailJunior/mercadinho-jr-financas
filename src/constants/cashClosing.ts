@@ -1,23 +1,32 @@
 import type { FixedExpense, WeeklyDay } from "@/types/cashClosing";
 
 export const WEEKLY_DATA: WeeklyDay[] = [
-  { dia: "Segunda", diaAbreviado: "Seg", valor: 2800 },
-  { dia: "Terça", diaAbreviado: "Ter", valor: 3100 },
-  { dia: "Quarta", diaAbreviado: "Qua", valor: 2450 },
-  { dia: "Quinta", diaAbreviado: "Qui", valor: 3250 },
-  { dia: "Sexta", diaAbreviado: "Sex", valor: 3800 },
-  { dia: "Sábado", diaAbreviado: "Sáb", valor: 4200 },
-  { dia: "Domingo", diaAbreviado: "Dom", valor: 1900 },
+  { dia: 'Segunda', diaAbreviado: 'Seg', valor: 2800, saida: 420 },
+  { dia: 'Terça', diaAbreviado: 'Ter', valor: 3100, saida: 580 },
+  { dia: 'Quarta', diaAbreviado: 'Qua', valor: 2450, saida: 350 },
+  { dia: 'Quinta', diaAbreviado: 'Qui', valor: 3250, saida: 450 },
+  { dia: 'Sexta', diaAbreviado: 'Sex', valor: 3800, saida: 720 },
+  { dia: 'Sábado', diaAbreviado: 'Sáb', valor: 4200, saida: 890 },
+  { dia: 'Domingo', diaAbreviado: 'Dom', valor: 1900, saida: 280 },
 ];
 
 export const FIXED_EXPENSES: FixedExpense[] = [
-  { nome: "Aluguel", valorMensal: 2500, reservaDiaria: 83.33 },
-  { nome: "Energia", valorMensal: 800, reservaDiaria: 26.67 },
-  { nome: "Água", valorMensal: 150, reservaDiaria: 5.0 },
-  { nome: "Internet", valorMensal: 120, reservaDiaria: 4.0 },
-  { nome: "Contador", valorMensal: 350, reservaDiaria: 11.67 },
-  { nome: "INSS / DAS", valorMensal: 350, reservaDiaria: 11.67 },
-  { nome: "Outros fixos", valorMensal: 660, reservaDiaria: 22.0 },
+  {
+    nome: 'Salário dos Pais (Pró-labore)',
+    valorMensal: 1200,
+    reservaDiaria: 40,
+  },
+  {
+    nome: 'Salário do Ajudante/Funcionário',
+    valorMensal: 2160,
+    reservaDiaria: 72,
+  },
+  { nome: 'Conta de Luz & Água', valorMensal: 1080, reservaDiaria: 36 },
+  {
+    nome: 'Fundo de Emergência / Mercado (10%)',
+    valorMensal: 1500,
+    reservaDiaria: 50,
+  },
 ];
 
 export const TOTAL_RESERVA_DIARIA = FIXED_EXPENSES.reduce(
