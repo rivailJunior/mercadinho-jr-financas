@@ -8,11 +8,15 @@ const createJestConfig = nextJest({
 const coverageAcceptanceThreshold = 25;
 
 const config: Config = {
-  setupFilesAfterSetup: ["<rootDir>/jest.setup.ts"],
-  testEnvironment: "jsdom",
-  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/cypress/", "<rootDir>/e2e/"],
-  coverageDirectory: "coverage",
-  collectCoverageFrom: ["src/**/*.{ts,tsx}"],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  testEnvironment: 'jsdom',
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/cypress/',
+    '<rootDir>/e2e/',
+  ],
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   coverageThreshold: {
     global: {
       branches: coverageAcceptanceThreshold,
