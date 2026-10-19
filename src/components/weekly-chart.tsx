@@ -1,79 +1,91 @@
-import { BarChart3 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/formatCurrency";
-import { WEEKLY_DATA } from "@/constants/cashClosing";
+import { formatCurrency } from '@/lib/formatCurrency';
+import { WEEKLY_DATA } from '@/constants/cashClosing';
+
+const AVERAGE = Math.round(
+  WEEKLY_DATA.reduce((acc, d) => acc + d.valor, 0) / WEEKLY_DATA.length,
+);
 
 export const WeeklyChart = () => {
-  const maxValue = Math.max(...WEEKLY_DATA.map((d) => d.valor));
-
   return (
     <section
-      className={cn(
-        "rounded-(--rounded-lg) border border-slate-200 bg-white",
-        "p-(--space-md) flex flex-col gap-(--space-md)",
-      )}
-      aria-labelledby="weekly-chart-title"
+      className='rounded-3xl border border-slate-100 bg-white p-5 shadow-soft'
+      aria-labelledby='weekly-chart-title'
     >
-      <div className="flex items-center gap-(--space-sm)">
-        <div className="flex h-10 w-10 items-center justify-center rounded-(--rounded-md) bg-blue-100">
-          <BarChart3 className="h-5 w-5 text-blue-700" aria-hidden="true" />
-        </div>
+      <div className='mb-3 flex items-center justify-between'>
         <div>
-          <h2
-            id="weekly-chart-title"
-            className="text-[18px] font-semibold leading-6.5 text-slate-900"
+          <h4
+            id='weekly-chart-title'
+            className='text-xs font-bold uppercase tracking-wide text-slate-700'
           >
             Como foi sua semana
-          </h2>
-          <p className="text-[14px] leading-5 text-slate-500">
-            Movimento dos últimos 7 dias
-          </p>
+          </h4>
+          <p className='text-xs text-slate-400'>Movimento dos últimos 7 dias</p>
         </div>
+        <span className='tabular-nums text-xs font-black text-indigo-600'>
+          Média: {formatCurrency(AVERAGE)}
+        </span>
       </div>
 
-      <div
-        className="flex items-end justify-between gap-(--space-xs) px-(--space-xs)"
-        role="img"
-        aria-label="Gráfico de barras do movimento semanal"
-      >
-        {WEEKLY_DATA.map((day) => {
-          const heightPercent = (day.valor / maxValue) * 100;
-          const isToday = day.diaAbreviado === "Qui";
-
-          return (
-            <div
-              key={day.diaAbreviado}
-              className="flex flex-1 flex-col items-center gap-1.5"
+      <div className='relative pb-1 pt-2'>
+        <svg
+          className='h-24 w-full overflow-visible'
+          fill='none'
+          viewBox='0 0 340 100'
+          aria-label='Gráfico de curva do movimento semanal'
+          role='img'
+        >
+          <defs>
+            <linearGradient id='curveGradient' x1='0' y1='0' x2='0' y2='1'>
+              <stop offset='0%' stopColor='#5b72ff' stopOpacity='0.25' />
+              <stop offset='100%' stopColor='#5b72ff' stopOpacity='0.0' />
+            </linearGradient>
+          </defs>
+          <path
+            d='M 0,80 C 40,75 70,50 110,60 C 150,70 180,35 220,40 C 260,45 290,20 340,30 L 340,100 L 0,100 Z'
+            fill='url(#curveGradient)'
+          />
+          <path
+            d='M 0,80 C 40,75 70,50 110,60 C 150,70 180,35 220,40 C 260,20 290,20 340,30'
+            stroke='#5b72ff'
+            strokeLinecap='round'
+            strokeWidth='3.5'
+          />
+          <circle
+            cx='280'
+            cy='22'
+            r='6'
+            className='fill-white stroke-indigo-600 stroke-3'
+          />
+          <circle cx='280' cy='22' r='2.5' className='fill-indigo-600' />
+          <g transform='translate(255, -2)'>
+            <rect width='52' height='18' rx='9' fill='#1e293b' />
+            <text
+              x='26'
+              y='13'
+              textAnchor='middle'
+              fill='#ffffff'
+              fontSize='10'
+              fontWeight='bold'
             >
-              <span
-                className={cn(
-                  "tabular-nums text-[11px] font-bold leading-3.5",
-                  isToday ? "text-primary" : "text-slate-500",
-                )}
-              >
-                {formatCurrency(day.valor)}
-              </span>
-              <div
-                className={cn(
-                  "w-full rounded-t-(--rounded-sm) transition-all",
-                  isToday
-                    ? "bg-primary"
-                    : "bg-slate-200",
-                )}
-                style={{ height: `${Math.max(heightPercent * 1.2, 8)}px` }}
-                role="presentation"
-              />
-              <span
-                className={cn(
-                  "text-[11px] font-semibold leading-3.5 tracking-[0.04em]",
-                  isToday ? "text-primary" : "text-slate-500",
-                )}
-              >
-                {day.diaAbreviado}
-              </span>
-            </div>
-          );
-        })}
+              R$ 3.250
+            </text>
+          </g>
+        </svg>
+
+        <div className='mt-2 flex justify-between px-1 text-[11px] font-bold text-slate-400'>
+          {WEEKLY_DATA.map((day, i) => (
+            <span
+              key={day.diaAbreviado}
+              className={
+                i === WEEKLY_DATA.length - 4
+                  ? 'font-extrabold text-indigo-600'
+                  : ''
+              }
+            >
+              {i === WEEKLY_DATA.length - 4 ? 'Hoje' : day.diaAbreviado}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );

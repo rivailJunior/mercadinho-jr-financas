@@ -1,194 +1,228 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { CalendarClock, Check } from "lucide-react";
+import { useState, useCallback } from 'react';
 import { cn } from "@/lib/utils";
-import { CurrencyInput } from "@/components/currency-input";
-import { formatCurrency } from "@/lib/formatCurrency";
+import { CurrencyInput } from '@/components/currency-input';
 
-interface RetroactiveFormState {
-  data: string;
-  dinheiroGaveta: number;
-  cartao: number;
-  pix: number;
-  saidas: number;
+type TipoMovimentacao = 'entrada' | 'saida';
+
+interface RetroactiveEntryCardProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const INITIAL_STATE: RetroactiveFormState = {
-  data: "",
-  dinheiroGaveta: 0,
-  cartao: 0,
-  pix: 0,
-  saidas: 0,
-};
+export const RetroactiveEntryCard = ({
+  isOpen,
+  onClose,
+}: RetroactiveEntryCardProps) => {
+  const [data, setData] = useState('');
+  const [tipo, setTipo] = useState<TipoMovimentacao>('entrada');
+  const [valor, setValor] = useState(0);
 
-export const RetroactiveEntryCard = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState<RetroactiveFormState>(INITIAL_STATE);
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleFieldChange = useCallback(
-    (field: keyof RetroactiveFormState) => (value: number) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-      setSubmitted(false);
-    },
-    [],
-  );
-
-  const handleDateChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((prev) => ({ ...prev, data: e.target.value }));
-      setSubmitted(false);
-    },
-    [],
-  );
-
-  const totalEntradas =
-    form.dinheiroGaveta + form.cartao + form.pix;
-  const sobraLimpa = totalEntradas - form.saidas;
-
-  const handleSubmit = useCallback(() => {
-    setSubmitted(true);
+  const handleReset = useCallback(() => {
+    setData('');
+    setValor(0);
+    setTipo('entrada');
   }, []);
 
-  const handleToggle = useCallback(() => {
-    setIsOpen((prev) => !prev);
-    setSubmitted(false);
-    setForm(INITIAL_STATE);
-  }, []);
+  const handleConfirm = useCallback(() => {
+    onClose();
+    handleReset();
+  }, [onClose, handleReset]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+    handleReset();
+  }, [onClose, handleReset]);
+
+  if (!isOpen) return null;
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dayBefore = new Date();
+  dayBefore.setDate(dayBefore.getDate() - 2);
+
+  const formatShortDate = (d: Date) =>
+    d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  const toInputDate = (d: Date) => d.toISOString().split('T')[0];
 
   return (
-    <section
-      className={cn(
-        "rounded-(--rounded-lg) border border-slate-200 bg-white",
-        "p-(--space-md) flex flex-col gap-(--space-md)",
-      )}
-      aria-labelledby="retroactive-title"
+    <div
+      className='fixed inset-0 z-30 flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4'
+      onClick={handleClose}
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='retroactive-title'
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-(--space-sm)">
-          <div className="flex h-10 w-10 items-center justify-center rounded-(--rounded-md) bg-blue-100">
-            <CalendarClock
-              className="h-5 w-5 text-blue-700"
-              aria-hidden="true"
-            />
-          </div>
-          <div>
-            <h2
-              id="retroactive-title"
-              className="text-[18px] font-semibold leading-6.5 text-slate-900"
-            >
-              Lançar valor de outro dia
-            </h2>
-            <p className="text-[14px] leading-5 text-slate-500">
-              Esqueceu de fechar algum dia? Anote aqui!
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleToggle}
-          className={cn(
-            "rounded-(--rounded-md) border border-slate-200 bg-white",
-            "px-3 py-2 text-[12px] font-semibold leading-4 text-slate-700",
-            "transition-colors hover:bg-slate-50",
-          )}
-          aria-expanded={isOpen}
-        >
-          {isOpen ? "Fechar" : "Abrir"}
-        </button>
-      </div>
-
-      {isOpen && (
-        <div className="flex flex-col gap-(--space-md) border-t border-slate-100 pt-(--space-md)">
-          <div className="flex flex-col gap-(--space-xs)">
-            <label
-              htmlFor="retro-date"
-              className="text-[12px] font-semibold leading-4 tracking-[0.02em] text-slate-700"
-            >
-              Data
-            </label>
-            <input
-              id="retro-date"
-              type="date"
-              value={form.data}
-              onChange={handleDateChange}
-              className={cn(
-                "w-full rounded-(--rounded-md) border border-slate-200 bg-white",
-                "px-3 py-3 text-[14px] leading-5 text-slate-900",
-                "outline-none transition-all",
-                "focus:border-primary focus:ring-2 focus:ring-primary/20",
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-(--space-sm)">
-            <CurrencyInput
-              id="retro-dinheiro"
-              label="Dinheiro"
-              value={form.dinheiroGaveta}
-              onChange={handleFieldChange("dinheiroGaveta")}
-            />
-            <CurrencyInput
-              id="retro-cartao"
-              label="Cartão"
-              value={form.cartao}
-              onChange={handleFieldChange("cartao")}
-            />
-            <CurrencyInput
-              id="retro-pix"
-              label="Pix"
-              value={form.pix}
-              onChange={handleFieldChange("pix")}
-            />
-            <CurrencyInput
-              id="retro-saidas"
-              label="Saídas"
-              value={form.saidas}
-              onChange={handleFieldChange("saidas")}
-            />
-          </div>
-
-          {totalEntradas > 0 && (
-            <div className="flex items-center justify-between rounded-(--rounded-md) bg-slate-50 px-4 py-3">
-              <span className="text-[14px] font-medium leading-5 text-slate-700">
-                Sobra líquida
-              </span>
-              <span
-                className={cn(
-                  "tabular-nums text-[20px] font-bold leading-7",
-                  sobraLimpa >= 0 ? "text-green-700" : "text-red-700",
-                )}
+      <div
+        className='max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-4xl bg-white p-6 shadow-2xl sm:rounded-3xl'
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex items-center justify-between border-b border-slate-100 pb-2'>
+          <div className='flex items-center gap-2'>
+            <span className='text-2xl'>📅</span>
+            <div>
+              <h3
+                id='retroactive-title'
+                className='text-base font-extrabold leading-tight text-slate-800'
               >
-                {formatCurrency(sobraLimpa)}
-              </span>
+                Lançar valor de outro dia
+              </h3>
+              <p className='text-xs text-slate-500'>
+                Esqueceu de fechar algum dia? Anote aqui!
+              </p>
             </div>
-          )}
-
+          </div>
           <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!form.data || totalEntradas === 0}
-            className={cn(
-              "flex w-full items-center justify-center gap-2",
-              "rounded-(--rounded-md) bg-primary px-4 py-3",
-              "text-[14px] font-semibold leading-5 text-white",
-              "transition-colors hover:bg-primary/90",
-              "active:scale-[0.98]",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
+            type='button'
+            onClick={handleClose}
+            className='flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-500 hover:bg-slate-200'
           >
-            {submitted ? (
-              <>
-                <Check className="h-4 w-4" />
-                Salvo!
-              </>
-            ) : (
-              "Salvar Lançamento"
-            )}
+            ✕
           </button>
         </div>
-      )}
-    </section>
+
+        <div className='space-y-1.5'>
+          <label className='block text-xs font-bold uppercase tracking-wide text-slate-600'>
+            Qual foi o dia que faltou?
+          </label>
+          <div className='grid grid-cols-3 gap-2'>
+            <button
+              type='button'
+              onClick={() => setData(toInputDate(yesterday))}
+              className={cn(
+                'rounded-xl border px-2 py-2 text-center text-xs font-bold transition-transform active:scale-95',
+                data === toInputDate(yesterday)
+                  ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-700',
+              )}
+            >
+              Ontem
+              <span className='block text-[10px] font-normal text-slate-500'>
+                {formatShortDate(yesterday)}
+              </span>
+            </button>
+            <button
+              type='button'
+              onClick={() => setData(toInputDate(dayBefore))}
+              className={cn(
+                'rounded-xl border px-2 py-2 text-center text-xs font-bold transition-transform active:scale-95',
+                data === toInputDate(dayBefore)
+                  ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-700',
+              )}
+            >
+              Anteontem
+              <span className='block text-[10px] font-normal text-slate-500'>
+                {formatShortDate(dayBefore)}
+              </span>
+            </button>
+            <button
+              type='button'
+              onClick={() => {
+                const el = document.getElementById('input-data-escolhida');
+                if (el) (el as HTMLInputElement).showPicker?.();
+              }}
+              className='rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-center text-xs font-bold text-slate-700 transition-transform active:scale-95'
+            >
+              Outra data
+              <span className='block text-[10px] font-normal text-slate-500'>
+                Escolher
+              </span>
+            </button>
+          </div>
+          <input
+            id='input-data-escolhida'
+            type='date'
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            className='mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none'
+          />
+        </div>
+
+        <div className='space-y-1.5'>
+          <label className='block text-xs font-bold uppercase tracking-wide text-slate-600'>
+            O que foi essa movimentação?
+          </label>
+          <div className='grid grid-cols-2 gap-2'>
+            <label
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-xl border-2 p-3',
+                tipo === 'entrada'
+                  ? 'border-emerald-500 bg-emerald-50'
+                  : 'border-slate-200 bg-white',
+              )}
+            >
+              <input
+                type='radio'
+                name='tipo_retroativo'
+                value='entrada'
+                checked={tipo === 'entrada'}
+                onChange={() => setTipo('entrada')}
+                className='text-emerald-600 focus:ring-emerald-500'
+              />
+              <span className='text-xs font-black text-emerald-800'>
+                💰 Venda (Entrada)
+              </span>
+            </label>
+            <label
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-xl border-2 p-3',
+                tipo === 'saida'
+                  ? 'border-rose-500 bg-rose-50'
+                  : 'border-slate-200 bg-white',
+              )}
+            >
+              <input
+                type='radio'
+                name='tipo_retroativo'
+                value='saida'
+                checked={tipo === 'saida'}
+                onChange={() => setTipo('saida')}
+                className='text-rose-600 focus:ring-rose-500'
+              />
+              <span className='text-xs font-black text-rose-800'>
+                🛒 Gasto (Saída)
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div className='space-y-1.5'>
+          <label
+            htmlFor='valor-outro-dia'
+            className='block text-xs font-bold uppercase tracking-wide text-slate-600'
+          >
+            Valor movimentado:
+          </label>
+          <CurrencyInput
+            id='valor-outro-dia'
+            label=''
+            value={valor}
+            onChange={setValor}
+            placeholder='R$ 0,00'
+          />
+        </div>
+
+        <div className='space-y-2 pt-2'>
+          <button
+            type='button'
+            onClick={handleConfirm}
+            disabled={!data || valor === 0}
+            className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-lg transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            <span>✓</span>
+            <span>Confirmar e Salvar no Dia Escolhido</span>
+          </button>
+          <button
+            type='button'
+            onClick={handleClose}
+            className='w-full py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700'
+          >
+            Cancelar e voltar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };

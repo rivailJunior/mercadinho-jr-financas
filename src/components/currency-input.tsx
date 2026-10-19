@@ -16,7 +16,7 @@ export const CurrencyInput = ({
   label,
   value,
   onChange,
-  placeholder = "R$ 0,00",
+  placeholder = '0,00',
   id,
 }: CurrencyInputProps) => {
   const handleChange = useCallback(
@@ -27,41 +27,40 @@ export const CurrencyInput = ({
     [onChange],
   );
 
-  const displayValue = value > 0 ? formatCurrency(value) : "";
+  const displayValue = value > 0 ? formatCurrency(value) : '';
 
   return (
-    <div className="flex flex-col gap-(--space-xs)">
-      <label
-        htmlFor={id}
-        className="text-[12px] font-semibold leading-4 tracking-[0.02em] text-slate-700"
-      >
-        {label}
-      </label>
-      <div className="relative flex items-center">
+    <div className='flex flex-col gap-1'>
+      {label && (
+        <label
+          htmlFor={id}
+          className='block text-xs font-bold uppercase tracking-wide text-slate-600'
+        >
+          {label}
+        </label>
+      )}
+      <div className='relative flex items-center'>
         <span
-          className={cn(
-            "absolute left-3 text-[14px] font-medium text-slate-500",
-            "pointer-events-none select-none",
-          )}
-          aria-hidden="true"
+          className='pointer-events-none absolute left-4 select-none text-xl font-bold text-slate-400'
+          aria-hidden='true'
         >
           R$
         </span>
         <input
           id={id}
-          type="text"
-          inputMode="numeric"
+          type='text'
+          inputMode='decimal'
           value={displayValue}
           onChange={handleChange}
           placeholder={placeholder}
           className={cn(
-            "tabular-nums w-full rounded-(--rounded-md) border border-slate-200 bg-white",
-            "py-3 pl-10 pr-4 text-[16px] font-medium leading-6 text-slate-900",
-            "placeholder:text-slate-500/60",
-            "outline-none transition-all",
-            "focus:border-primary focus:ring-2 focus:ring-primary/20",
+            'tabular-nums w-full rounded-2xl border-2 border-slate-200 bg-slate-50',
+            'py-3.5 pl-14 pr-4 text-2xl font-extrabold text-slate-800',
+            'placeholder:text-slate-400',
+            'outline-none transition-all',
+            'focus:border-indigo-500 focus:bg-white',
           )}
-          aria-label={label}
+          aria-label={label || 'Valor em reais'}
         />
       </div>
     </div>
