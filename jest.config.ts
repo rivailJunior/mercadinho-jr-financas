@@ -14,6 +14,7 @@ const config: Config = {
     '/node_modules/',
     '<rootDir>/cypress/',
     '<rootDir>/e2e/',
+    '<rootDir>/src/tests/e2e/',
   ],
   coverageDirectory: 'coverage',
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],

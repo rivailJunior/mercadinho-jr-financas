@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { WeeklyDay } from "@/types/cashClosing";
 
@@ -6,6 +9,8 @@ const SVG_HEIGHT = 100;
 const PADDING_TOP = 15;
 const PADDING_BOTTOM = 10;
 const CHART_HEIGHT = SVG_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
+const PILL_WIDTH = 52;
+const PILL_HEIGHT = 16;
 
 const buildPoints = (values: number[], maxValue: number) => {
   const step = SVG_WIDTH / (values.length - 1);
@@ -34,14 +39,21 @@ const buildAreaPath = (points: { x: number; y: number }[]) => {
   return `${line} L ${last.x},${SVG_HEIGHT} L ${first.x},${SVG_HEIGHT} Z`;
 };
 
+const clampPillX = (x: number) =>
+  Math.min(Math.max(x - PILL_WIDTH / 2, 0), SVG_WIDTH - PILL_WIDTH);
+
 interface WeeklyChartProps {
   data: WeeklyDay[];
 }
 
 export const WeeklyChart = ({ data }: WeeklyChartProps) => {
+  const [selectedIndex, setSelectedIndex] = useState(data.length - 1);
+
   if (data.length < 2) return null;
 
   const todayIndex = data.length - 1;
+  const activeIndex = Math.min(Math.max(selectedIndex, 0), todayIndex);
+  const step = SVG_WIDTH / (data.length - 1);
   const maxValue = Math.max(...data.map((d) => d.valor), ...data.map((d) => d.saida), 1);
 
   const mediaEntradas = Math.round(data.reduce((acc, d) => acc + d.valor, 0) / data.length);
@@ -61,8 +73,14 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
   const saidaLine = buildSmoothPath(saidaPoints);
   const saidaArea = buildAreaPath(saidaPoints);
 
-  const todayEntrada = entradaPoints[todayIndex];
-  const todaySaida = saidaPoints[todayIndex];
+  const selectedDay = data[activeIndex];
+  const selEntrada = entradaPoints[activeIndex];
+  const selSaida = saidaPoints[activeIndex];
+  const isTodaySelected = activeIndex === todayIndex;
+
+  // When the saída dot sits right above the entrada dot, the default "below the
+  // dot" pill would cover the entrada pill — flip it above instead.
+  const saidaPillY = selEntrada.y - selSaida.y > 14 ? selSaida.y - PILL_HEIGHT - 6 : selSaida.y + 8;
 
   return (
     <section
@@ -77,7 +95,9 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
           >
             Como foi sua semana
           </h4>
-          <p className="text-xs text-slate-400">Movimento dos últimos 7 dias</p>
+          <p className="text-xs text-slate-400">
+            {isTodaySelected ? "Movimento dos últimos 7 dias" : `Movimento de ${selectedDay.dia}`}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-0.5">
           <span className="tabular-nums text-[11px] font-black text-indigo-600">
@@ -108,6 +128,17 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
             </linearGradient>
           </defs>
 
+          {/* Selected day guide */}
+          <line
+            x1={selEntrada.x}
+            y1={0}
+            x2={selEntrada.x}
+            y2={SVG_HEIGHT}
+            stroke="#e2e8f0"
+            strokeDasharray="3 3"
+            strokeWidth="1.5"
+          />
+
           {/* Entrada (blue) */}
           <path d={entradaArea} fill="url(#entradaGrad)" />
           <path d={entradaLine} stroke="#5b72ff" strokeLinecap="round" strokeWidth="3" />
@@ -122,39 +153,67 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
             strokeDasharray="6 3"
           />
 
-          {/* Today dot — Entrada */}
+          {/* Selected day dot — Entrada */}
           <circle
-            cx={todayEntrada.x}
-            cy={todayEntrada.y}
+            cx={selEntrada.x}
+            cy={selEntrada.y}
             r="6"
             className="fill-white stroke-indigo-600 stroke-3"
           />
-          <circle cx={todayEntrada.x} cy={todayEntrada.y} r="2.5" className="fill-indigo-600" />
-          <g
-            transform={`translate(${Math.min(todayEntrada.x - 26, SVG_WIDTH - 52)}, ${todayEntrada.y - 22})`}
-          >
-            <rect width="52" height="16" rx="8" fill="#1e293b" />
-            <text x="26" y="12" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-              {formatCurrency(data[todayIndex].valor)}
+          <circle cx={selEntrada.x} cy={selEntrada.y} r="2.5" className="fill-indigo-600" />
+          <g transform={`translate(${clampPillX(selEntrada.x)}, ${selEntrada.y - 22})`}>
+            <rect width={PILL_WIDTH} height={PILL_HEIGHT} rx="8" fill="#1e293b" />
+            <text
+              x={PILL_WIDTH / 2}
+              y="12"
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize="9"
+              fontWeight="bold"
+            >
+              {formatCurrency(selectedDay.valor)}
             </text>
           </g>
 
-          {/* Today dot — Saída */}
+          {/* Selected day dot — Saída */}
           <circle
-            cx={todaySaida.x}
-            cy={todaySaida.y}
+            cx={selSaida.x}
+            cy={selSaida.y}
             r="5"
             className="fill-white stroke-rose-500 stroke-2"
           />
-          <circle cx={todaySaida.x} cy={todaySaida.y} r="2" className="fill-rose-500" />
-          <g
-            transform={`translate(${Math.min(todaySaida.x - 26, SVG_WIDTH - 52)}, ${todaySaida.y + 8})`}
-          >
-            <rect width="52" height="16" rx="8" fill="#be123c" />
-            <text x="26" y="12" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-              {formatCurrency(data[todayIndex].saida)}
+          <circle cx={selSaida.x} cy={selSaida.y} r="2" className="fill-rose-500" />
+          <g transform={`translate(${clampPillX(selSaida.x)}, ${saidaPillY})`}>
+            <rect width={PILL_WIDTH} height={PILL_HEIGHT} rx="8" fill="#be123c" />
+            <text
+              x={PILL_WIDTH / 2}
+              y="12"
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize="9"
+              fontWeight="bold"
+            >
+              {formatCurrency(selectedDay.saida)}
             </text>
           </g>
+
+          {/* Tap targets — one invisible column per day */}
+          {data.map((day, i) => {
+            const left = Math.max(0, (i - 0.5) * step);
+            const right = Math.min(SVG_WIDTH, (i + 0.5) * step);
+            return (
+              <rect
+                key={`hit-${day.diaAbreviado}`}
+                x={left}
+                y={0}
+                width={right - left}
+                height={SVG_HEIGHT}
+                fill="transparent"
+                className="cursor-pointer"
+                onClick={() => setSelectedIndex(i)}
+              />
+            );
+          })}
         </svg>
 
         {/* Legend */}
@@ -172,12 +231,17 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
         {/* Day labels */}
         <div className="mt-2 flex justify-between px-1 text-[11px] font-bold text-slate-400">
           {data.map((day, i) => (
-            <span
+            <button
               key={day.diaAbreviado}
-              className={i === todayIndex ? "font-extrabold text-indigo-600" : ""}
+              type="button"
+              onClick={() => setSelectedIndex(i)}
+              aria-pressed={i === activeIndex}
+              aria-label={`Ver movimento de ${i === todayIndex ? "hoje" : day.dia}`}
+              className={`cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+                }`}
             >
               {i === todayIndex ? "Hoje" : day.diaAbreviado}
-            </span>
+            </button>
           ))}
         </div>
       </div>

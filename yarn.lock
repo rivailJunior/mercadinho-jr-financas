@@ -1041,7 +1041,7 @@
     postcss "^8.5.16"
     tailwindcss "4.3.3"
 
-"@testing-library/dom@^10.0.0", "@testing-library/dom@>=10 <11", "@testing-library/dom@>=7.21.4":
+"@testing-library/dom@^10.0.0", "@testing-library/dom@^10.4.2", "@testing-library/dom@>=10 <11", "@testing-library/dom@>=7.21.4":
   version "10.4.2"
   resolved "https://registry.npmjs.org/@testing-library/dom/-/dom-10.4.2.tgz"
   integrity sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==
