@@ -24,7 +24,7 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-app-bg pb-14 shadow-2xl">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-app-bg pb-24 shadow-2xl">
       <FechamentoCaixaForm
         initialEntrada={today.entrada}
         initialSaida={today.saida}

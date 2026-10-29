@@ -18,7 +18,7 @@ const NAV_ITEMS: { id: NavItem; label: string; icon: typeof Home }[] = [
 export const BottomNav = ({ active = "caixa" }: BottomNavProps) => {
   return (
     <nav
-      className="sticky bottom-0 z-20 flex items-center justify-around border-t border-slate-100 bg-white px-6 py-3 shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-md items-center justify-around border-t border-slate-100 bg-white px-6 py-3 shadow-lg"
       aria-label="Navegação principal"
     >
       {NAV_ITEMS.map((item) => {
