@@ -5,23 +5,29 @@ import { CashEntryCard } from "@/components/cash-entry-card";
 import { DailySummaryCard } from "@/components/daily-summary-card";
 import { GreetingHeader } from "@/components/greeting-header";
 import { RetroactiveEntryCard } from "@/components/retroactive-entry-card";
-import { TOTAL_RESERVA_DIARIA, WEEKLY_DATA } from "@/constants/cashClosing";
 import type { CashEntry, DailySummary } from "@/types/cashClosing";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
-const TODAY_INDEX = 3;
-const todayData = WEEKLY_DATA[TODAY_INDEX];
+interface FechamentoCaixaFormProps {
+  initialEntrada: number;
+  initialSaida: number;
+  reservaDiaria: number;
+}
 
-const INITIAL_CASH: CashEntry = {
-  dinheiroGaveta: todayData.valor,
-  cartao: 0,
-  pix: 0,
-};
-
-export const FechamentoCaixaForm = () => {
-  const [cashEntry, setCashEntry] = useState<CashEntry>(INITIAL_CASH);
-  const [expenseValue, setExpenseValue] = useState(todayData.saida);
-  const [expenseDescription, setExpenseDescription] = useState("Compras de reposição pães e feira");
+export const FechamentoCaixaForm = ({
+  initialEntrada,
+  initialSaida,
+  reservaDiaria,
+}: FechamentoCaixaFormProps) => {
+  const router = useRouter();
+  const [cashEntry, setCashEntry] = useState<CashEntry>({
+    dinheiroGaveta: initialEntrada,
+    cartao: 0,
+    pix: 0,
+  });
+  const [expenseValue, setExpenseValue] = useState(initialSaida);
+  const [expenseDescription, setExpenseDescription] = useState("");
   const [retroactiveOpen, setRetroactiveOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -39,7 +45,8 @@ export const FechamentoCaixaForm = () => {
     setFeedback(
       result.ok ? "Entrada salva com sucesso!" : `Erro ao salvar entrada: ${result.error}`,
     );
-  }, [cashEntry]);
+    if (result.ok) router.refresh();
+  }, [cashEntry, router]);
 
   const handleSaveSaida = useCallback(async () => {
     setIsSaving(true);
@@ -50,21 +57,20 @@ export const FechamentoCaixaForm = () => {
     });
     setIsSaving(false);
     setFeedback(result.ok ? "Saida salva com sucesso!" : `Erro ao salvar saida: ${result.error}`);
-  }, [expenseValue, expenseDescription]);
+    if (result.ok) router.refresh();
+  }, [expenseValue, expenseDescription, router]);
 
   const summary: DailySummary = useMemo(() => {
     const totalEntradas = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
-    const totalSaidas = expenseValue;
-    const reservaDiaria = TOTAL_RESERVA_DIARIA;
-    const sobraLimpa = totalEntradas - totalSaidas - reservaDiaria;
+    const sobraLimpa = totalEntradas - expenseValue - reservaDiaria;
 
     return {
       totalEntradas,
-      totalSaidas,
+      totalSaidas: expenseValue,
       reservaDiaria: Math.round(reservaDiaria * 100) / 100,
       sobraLimpa: Math.round(sobraLimpa * 100) / 100,
     };
-  }, [cashEntry, expenseValue]);
+  }, [cashEntry, expenseValue, reservaDiaria]);
 
   return (
     <>

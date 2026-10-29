@@ -1,19 +1,40 @@
 import {
+  BottomNav,
   FechamentoCaixaForm,
   FixedExpenseReserve,
   WeeklyChart,
   WhatsAppHelpLink,
-  BottomNav,
-} from '@/components';
+  YearlySummaryCard,
+} from "@/components";
+import {
+  getFixedExpenses,
+  getTodayTotals,
+  getWeeklyData,
+  getYearlyTotals,
+} from "@/lib/cash-closing-data";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [weeklyData, { expenses, totalReservaDiaria }, today, yearly] = await Promise.all([
+    getWeeklyData(),
+    getFixedExpenses(),
+    getTodayTotals(),
+    getYearlyTotals(),
+  ]);
+
   return (
-    <main className='relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-app-bg pb-14 shadow-2xl'>
-      <FechamentoCaixaForm />
+    <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-app-bg pb-14 shadow-2xl">
+      <FechamentoCaixaForm
+        initialEntrada={today.entrada}
+        initialSaida={today.saida}
+        reservaDiaria={totalReservaDiaria}
+      />
 
-      <div className='flex-1 space-y-6 px-5 pt-6 pb-6'>
-        <FixedExpenseReserve />
-        <WeeklyChart />
+      <div className="flex-1 space-y-6 px-5 pt-6 pb-6">
+        <FixedExpenseReserve expenses={expenses} totalReservaDiaria={totalReservaDiaria} />
+        <WeeklyChart data={weeklyData} />
+        <YearlySummaryCard summary={{ totalEntradas: yearly.entrada, totalSaidas: yearly.saida }} />
         <WhatsAppHelpLink />
       </div>
 

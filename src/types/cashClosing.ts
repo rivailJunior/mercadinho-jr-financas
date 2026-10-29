@@ -17,6 +17,11 @@ export interface DailySummary {
   sobraLimpa: number;
 }
 
+export interface YearlySummary {
+  totalEntradas: number;
+  totalSaidas: number;
+}
+
 export interface WeeklyDay {
   dia: string;
   diaAbreviado: string;
