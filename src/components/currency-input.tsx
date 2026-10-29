@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, type ChangeEvent } from "react";
+import { formatCurrencyInput, parseCurrencyInput } from "@/lib/formatCurrency";
 import { cn } from "@/lib/utils";
-import { formatCurrency, parseCurrencyInput } from "@/lib/formatCurrency";
+import { useCallback, type ChangeEvent } from "react";
 
 interface CurrencyInputProps {
   label: string;
@@ -27,7 +27,7 @@ export const CurrencyInput = ({
     [onChange],
   );
 
-  const displayValue = value > 0 ? formatCurrency(value) : '';
+  const displayValue = value > 0 ? formatCurrencyInput(value) : '';
 
   return (
     <div className='flex flex-col gap-1'>

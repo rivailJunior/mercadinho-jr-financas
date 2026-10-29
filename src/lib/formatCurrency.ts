@@ -9,6 +9,13 @@ export const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
+export const formatCurrencyInput = (value: number): string => {
+  return new Intl.NumberFormat(CURRENCY_LOCALE, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 export const parseCurrencyInput = (raw: string): number => {
   const cleaned = raw.replace(/[^\d]/g, "");
   return Number(cleaned) / 100;
