@@ -1,3 +1,4 @@
+import { daysAgoISODate, todayISODate, weekdayIndexFromISODate } from "@/lib/dates";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import type { FixedExpense, WeeklyDay } from "@/types/cashClosing";
 
@@ -5,36 +6,27 @@ const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta"
 
 const DIAS_SEMANA_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
 
-const toISODate = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(
-    2,
-    "0",
-  )}`;
-
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Daily entradas/saídas for the last 7 days, ending today. */
 export const getWeeklyData = async (): Promise<WeeklyDay[]> => {
   const supabase = createSupabaseClient();
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - 6);
+  const days = Array.from({ length: 7 }, (_, i) => daysAgoISODate(6 - i));
 
   const { data } = await supabase
     .from("view_resumo_diario")
     .select("data_referencia, faturamento_dia, saidas_registradas_dia")
-    .gte("data_referencia", toISODate(start))
-    .lte("data_referencia", toISODate(today));
+    .gte("data_referencia", days[0])
+    .lte("data_referencia", days[6]);
 
   const byDate = new Map((data ?? []).map((r) => [r.data_referencia, r]));
 
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + i);
-    const row = byDate.get(toISODate(date));
+  return days.map((isoDate) => {
+    const row = byDate.get(isoDate);
+    const weekday = weekdayIndexFromISODate(isoDate);
     return {
-      dia: DIAS_SEMANA[date.getDay()],
-      diaAbreviado: DIAS_SEMANA_ABREV[date.getDay()],
+      dia: DIAS_SEMANA[weekday],
+      diaAbreviado: DIAS_SEMANA_ABREV[weekday],
       valor: row?.faturamento_dia ?? 0,
       saida: row?.saidas_registradas_dia ?? 0,
     };
@@ -69,7 +61,7 @@ export const getFixedExpenses = async (): Promise<FixedExpensesResult> => {
   const diasUteis = estabelecimento?.dias_uteis_mes_padrao ?? 30;
 
   // Keep only the latest vigencia that is already in effect.
-  const mesAtual = `${toISODate(new Date()).slice(0, 8)}01`;
+  const mesAtual = `${todayISODate().slice(0, 7)}-01`;
   const elegiveis = (custos ?? []).filter((c) => c.mes_ano_vigencia <= mesAtual);
   const vigencia = elegiveis.reduce(
     (max, c) => (c.mes_ano_vigencia > max ? c.mes_ano_vigencia : max),
@@ -80,12 +72,10 @@ export const getFixedExpenses = async (): Promise<FixedExpensesResult> => {
   // Percentual costs are converted to R$ using the 30-day average revenue.
   let mediaDiaria = 0;
   if (rows.some((c) => c.tipo_custo === "PERCENTUAL_RECEITA")) {
-    const inicio = new Date();
-    inicio.setDate(inicio.getDate() - 30);
     const { data: resumo } = await supabase
       .from("view_resumo_diario")
       .select("faturamento_dia")
-      .gte("data_referencia", toISODate(inicio));
+      .gte("data_referencia", daysAgoISODate(30));
     const total = (resumo ?? []).reduce((acc, r) => acc + (r.faturamento_dia ?? 0), 0);
     mediaDiaria = total / 30;
   }
@@ -108,7 +98,7 @@ export const getFixedExpenses = async (): Promise<FixedExpensesResult> => {
 /** Aggregated entradas/saídas for the current year. */
 export const getYearlyTotals = async () => {
   const supabase = createSupabaseClient();
-  const yearStart = `${new Date().getFullYear()}-01-01`;
+  const yearStart = `${todayISODate().slice(0, 4)}-01-01`;
 
   const { data } = await supabase
     .from("view_resumo_diario")
@@ -130,7 +120,7 @@ export const getTodayTotals = async () => {
   const { data } = await supabase
     .from("lancamentos_caixa")
     .select("tipo, valor")
-    .eq("data_referencia", toISODate(new Date()));
+    .eq("data_referencia", todayISODate());
 
   let entrada = 0;
   let saida = 0;

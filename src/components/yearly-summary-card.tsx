@@ -1,4 +1,5 @@
 import { SummaryCardItem } from "@/components/summary-card-item";
+import { todayISODate } from "@/lib/dates";
 import type { YearlySummary } from "@/types/cashClosing";
 
 interface YearlySummaryCardProps {
@@ -16,7 +17,7 @@ export const YearlySummaryCard = ({ summary }: YearlySummaryCardProps) => {
           Resumo do Ano
         </h2>
         <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-600">
-          {new Date().getFullYear()}
+          {todayISODate().slice(0, 4)}
         </span>
       </div>
 

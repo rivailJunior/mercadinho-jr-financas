@@ -1,5 +1,6 @@
 "use server";
 
+import { todayISODate } from "@/lib/dates";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { z } from "zod";
 
@@ -10,8 +11,6 @@ export interface SaveResult {
   ok: boolean;
   error?: string;
 }
-
-const todayISO = () => new Date().toISOString().split("T")[0];
 
 /** Resolves the default establishment id (single-store app). */
 const getEstabelecimentoId = async (
@@ -65,7 +64,7 @@ export async function saveEntrada(input: {
   const { error } = await supabase.from("lancamentos_caixa").insert({
     estabelecimento_id: estabelecimentoId,
     categoria_id: categoriaId,
-    data_referencia: parsed.data.dataReferencia ?? todayISO(),
+    data_referencia: parsed.data.dataReferencia ?? todayISODate(),
     tipo: "ENTRADA",
     valor: parsed.data.total,
     forma_pagamento: parsed.data.formaPagamento ?? "MISTO",
@@ -101,7 +100,7 @@ export async function saveSaida(input: {
   const { error } = await supabase.from("lancamentos_caixa").insert({
     estabelecimento_id: estabelecimentoId,
     categoria_id: categoriaId,
-    data_referencia: parsed.data.dataReferencia ?? todayISO(),
+    data_referencia: parsed.data.dataReferencia ?? todayISODate(),
     tipo: "SAIDA",
     valor: parsed.data.valor,
     descricao: parsed.data.descricao?.trim() || "Despesa avulsa",

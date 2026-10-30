@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Mic, CheckCircle } from 'lucide-react';
+import { formatShortISODate, todayISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { CurrencyInput } from "@/components/currency-input";
 import type { CashEntry } from "@/types/cashClosing";
@@ -61,11 +62,7 @@ export const CashEntryCard = ({
           </h2>
         </div>
         <span className='rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500'>
-          Hoje:{' '}
-          {new Date().toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: 'short',
-          })}
+          Hoje: {formatShortISODate(todayISODate())}
         </span>
       </div>
 

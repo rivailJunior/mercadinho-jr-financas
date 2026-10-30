@@ -55,9 +55,6 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
   const step = SVG_WIDTH / (data.length - 1);
   const maxValue = Math.max(...data.map((d) => d.valor), ...data.map((d) => d.saida), 1);
 
-  const mediaEntradas = Math.round(data.reduce((acc, d) => acc + d.valor, 0) / data.length);
-  const mediaSaidas = Math.round(data.reduce((acc, d) => acc + d.saida, 0) / data.length);
-
   const entradaPoints = buildPoints(
     data.map((d) => d.valor),
     maxValue,
@@ -100,10 +97,10 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
         </div>
         <div className="flex flex-col items-end gap-0.5">
           <span className="tabular-nums text-[11px] font-black text-indigo-600">
-            Entrada: {formatCurrency(mediaEntradas)}
+            Entrada: {formatCurrency(selectedDay.valor)}
           </span>
           <span className="tabular-nums text-[11px] font-black text-rose-500">
-            Saída: {formatCurrency(mediaSaidas)}
+            Saída: {formatCurrency(selectedDay.saida)}
           </span>
         </div>
       </div>
@@ -237,9 +234,8 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
               onClick={() => setSelectedIndex(i)}
               aria-pressed={i === activeIndex}
               aria-label={`Ver movimento de ${i === todayIndex ? "hoje" : day.dia}`}
-              className={`cursor-pointer transition-colors ${
-                i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
-              }`}
+              className={`cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+                }`}
             >
               {i === todayIndex ? "Hoje" : day.diaAbreviado}
             </button>

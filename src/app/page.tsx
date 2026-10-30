@@ -32,9 +32,10 @@ export default async function Home() {
       />
 
       <div className="flex-1 space-y-6 px-5 pt-6 pb-6">
+        <YearlySummaryCard summary={{ totalEntradas: yearly.entrada, totalSaidas: yearly.saida }} />
         <FixedExpenseReserve expenses={expenses} totalReservaDiaria={totalReservaDiaria} />
         <WeeklyChart data={weeklyData} />
-        <YearlySummaryCard summary={{ totalEntradas: yearly.entrada, totalSaidas: yearly.saida }} />
+
         <WhatsAppHelpLink />
       </div>
 

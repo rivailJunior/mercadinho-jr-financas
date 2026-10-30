@@ -2,6 +2,7 @@
 
 import { saveRetroativo } from "@/app/actions/lancamentos";
 import { CurrencyInput } from "@/components/currency-input";
+import { daysAgoISODate, formatShortISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useCallback, useState } from "react";
 
@@ -50,14 +51,8 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
 
   if (!isOpen) return null;
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const dayBefore = new Date();
-  dayBefore.setDate(dayBefore.getDate() - 2);
-
-  const formatShortDate = (d: Date) =>
-    d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  const toInputDate = (d: Date) => d.toISOString().split("T")[0];
+  const yesterdayISO = daysAgoISODate(1);
+  const dayBeforeISO = daysAgoISODate(2);
 
   return (
     <div
@@ -100,32 +95,32 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setData(toInputDate(yesterday))}
+              onClick={() => setData(yesterdayISO)}
               className={cn(
                 "rounded-xl border px-2 py-2 text-center text-xs font-bold transition-transform active:scale-95",
-                data === toInputDate(yesterday)
+                data === yesterdayISO
                   ? "border-indigo-200 bg-indigo-50 text-indigo-700"
                   : "border-slate-200 bg-slate-50 text-slate-700",
               )}
             >
               Ontem
               <span className="block text-[10px] font-normal text-slate-500">
-                {formatShortDate(yesterday)}
+                {formatShortISODate(yesterdayISO)}
               </span>
             </button>
             <button
               type="button"
-              onClick={() => setData(toInputDate(dayBefore))}
+              onClick={() => setData(dayBeforeISO)}
               className={cn(
                 "rounded-xl border px-2 py-2 text-center text-xs font-bold transition-transform active:scale-95",
-                data === toInputDate(dayBefore)
+                data === dayBeforeISO
                   ? "border-indigo-200 bg-indigo-50 text-indigo-700"
                   : "border-slate-200 bg-slate-50 text-slate-700",
               )}
             >
               Anteontem
               <span className="block text-[10px] font-normal text-slate-500">
-                {formatShortDate(dayBefore)}
+                {formatShortISODate(dayBeforeISO)}
               </span>
             </button>
             <button

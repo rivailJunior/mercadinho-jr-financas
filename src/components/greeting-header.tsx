@@ -1,3 +1,5 @@
+import { todayISODate, weekdayIndexFromISODate } from "@/lib/dates";
+
 const WEEKDAYS = [
   'Domingo',
   'Segunda-feira',
@@ -24,13 +26,13 @@ const MONTHS = [
 ];
 
 const getFormattedDate = (): { weekday: string; dayMonth: string } => {
-  const now = new Date();
-  const weekday = WEEKDAYS[now.getDay()];
-  const day = now.getDate();
-  const month = MONTHS[now.getMonth()];
+  const isoDate = todayISODate();
+  const [, month, day] = isoDate.split("-").map(Number);
+  const weekday = WEEKDAYS[weekdayIndexFromISODate(isoDate)];
+  const monthName = MONTHS[month - 1];
   return {
-    weekday: `${weekday}, ${day} de ${month}`,
-    dayMonth: `${day}/${month.slice(0, 3)}`,
+    weekday: `${weekday}, ${day} de ${monthName}`,
+    dayMonth: `${day}/${monthName.slice(0, 3)}`,
   };
 };
 
