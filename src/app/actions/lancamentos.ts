@@ -78,13 +78,13 @@ export async function saveEntrada(input: {
 
 const saidaSchema = z.object({
   valor: z.number().positive(),
-  descricao: z.string().min(1),
+  descricao: z.string().optional(),
   dataReferencia: z.string().optional(),
 });
 
 export async function saveSaida(input: {
   valor: number;
-  descricao: string;
+  descricao?: string;
   dataReferencia?: string;
 }): Promise<SaveResult> {
   const parsed = saidaSchema.safeParse(input);
@@ -104,7 +104,7 @@ export async function saveSaida(input: {
     data_referencia: parsed.data.dataReferencia ?? todayISO(),
     tipo: "SAIDA",
     valor: parsed.data.valor,
-    descricao: parsed.data.descricao,
+    descricao: parsed.data.descricao?.trim() || "Despesa avulsa",
   });
 
   if (error) return { ok: false, error: error.message };
