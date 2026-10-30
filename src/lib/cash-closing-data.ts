@@ -1,10 +1,40 @@
 import { daysAgoISODate, todayISODate, weekdayIndexFromISODate } from "@/lib/dates";
 import { createSupabaseClient } from "@/lib/supabase/client";
-import type { FixedExpense, WeeklyDay } from "@/types/cashClosing";
+import type { FixedExpense, WeeklyDay, YearlyMonth } from "@/types/cashClosing";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 
 const DIAS_SEMANA_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
+
+const MESES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+] as const;
+
+const MESES_ABREV = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+] as const;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -31,6 +61,37 @@ export const getWeeklyData = async (): Promise<WeeklyDay[]> => {
       saida: row?.saidas_registradas_dia ?? 0,
     };
   });
+};
+
+/** Monthly entradas/saídas for the current year, January through the current month. */
+export const getYearlyData = async (): Promise<YearlyMonth[]> => {
+  const supabase = createSupabaseClient();
+  const today = todayISODate();
+  const yearStart = `${today.slice(0, 4)}-01-01`;
+  const currentMonth = Number(today.slice(5, 7));
+
+  const { data } = await supabase
+    .from("view_resumo_diario")
+    .select("data_referencia, faturamento_dia, saidas_registradas_dia")
+    .gte("data_referencia", yearStart)
+    .lte("data_referencia", today);
+
+  const entradaByMonth = new Array<number>(currentMonth).fill(0);
+  const saidaByMonth = new Array<number>(currentMonth).fill(0);
+  for (const row of data ?? []) {
+    if (!row.data_referencia) continue;
+    const month = Number(row.data_referencia.slice(5, 7)) - 1;
+    if (month < 0 || month >= currentMonth) continue;
+    entradaByMonth[month] += row.faturamento_dia ?? 0;
+    saidaByMonth[month] += row.saidas_registradas_dia ?? 0;
+  }
+
+  return entradaByMonth.map((valor, i) => ({
+    dia: MESES[i],
+    diaAbreviado: MESES_ABREV[i],
+    valor: round2(valor),
+    saida: round2(saidaByMonth[i]),
+  }));
 };
 
 interface FixedExpensesResult {

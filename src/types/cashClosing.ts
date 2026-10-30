@@ -29,6 +29,13 @@ export interface WeeklyDay {
   saida: number;
 }
 
+export interface YearlyMonth {
+  dia: string;
+  diaAbreviado: string;
+  valor: number;
+  saida: number;
+}
+
 export interface FixedExpense {
   nome: string;
   valorMensal: number;
