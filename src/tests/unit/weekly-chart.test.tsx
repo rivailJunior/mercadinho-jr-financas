@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import { WeeklyChart } from "@/components";
 import type { WeeklyDay } from "@/types/cashClosing";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 const week: WeeklyDay[] = [
   { dia: "Sexta", diaAbreviado: "Sex", valor: 100, saida: 10 },

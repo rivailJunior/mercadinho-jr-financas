@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { WeeklyDay } from "@/types/cashClosing";
+import { useState } from "react";
 
 const SVG_WIDTH = 340;
 const SVG_HEIGHT = 100;
@@ -39,8 +39,7 @@ const buildAreaPath = (points: { x: number; y: number }[]) => {
   return `${line} L ${last.x},${SVG_HEIGHT} L ${first.x},${SVG_HEIGHT} Z`;
 };
 
-const clampPillX = (x: number) =>
-  Math.min(Math.max(x - PILL_WIDTH / 2, 0), SVG_WIDTH - PILL_WIDTH);
+const clampPillX = (x: number) => Math.min(Math.max(x - PILL_WIDTH / 2, 0), SVG_WIDTH - PILL_WIDTH);
 
 interface WeeklyChartProps {
   data: WeeklyDay[];
@@ -202,6 +201,7 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
             const left = Math.max(0, (i - 0.5) * step);
             const right = Math.min(SVG_WIDTH, (i + 0.5) * step);
             return (
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard access is provided by the day buttons below the chart
               <rect
                 key={`hit-${day.diaAbreviado}`}
                 x={left}
@@ -237,8 +237,9 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => {
               onClick={() => setSelectedIndex(i)}
               aria-pressed={i === activeIndex}
               aria-label={`Ver movimento de ${i === todayIndex ? "hoje" : day.dia}`}
-              className={`cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
-                }`}
+              className={`cursor-pointer transition-colors ${
+                i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+              }`}
             >
               {i === todayIndex ? "Hoje" : day.diaAbreviado}
             </button>
