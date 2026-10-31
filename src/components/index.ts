@@ -11,3 +11,4 @@ export { WhatsAppHelpLink } from "./whatsapp-help-link";
 export { RetroactiveEntryCard } from "./retroactive-entry-card";
 export { FechamentoCaixaForm } from "./fechamento-caixa-form";
 export { BottomNav } from "./bottom-nav";
+export { Toast } from "./toast";

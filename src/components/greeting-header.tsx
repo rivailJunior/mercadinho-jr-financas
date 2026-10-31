@@ -49,17 +49,15 @@ export const GreetingHeader = ({ onOpenRetroactive }: GreetingHeaderProps) => {
         <span className='inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700'>
           Mercadinho Jr
         </span>
-        <h1 className='text-2xl font-extrabold leading-tight tracking-tight text-slate-800'>
-          Olá, Pai &amp; Mãe! 👋
-        </h1>
+        <span className='mt-0.5 text-sm font-semibold text-indigo-600'>
+          {weekday}
+        </span>
       </div>
 
       <div className='mt-2 text-left'>
-        <p className='mt-0.5 text-sm font-semibold text-indigo-600'>
-          {weekday}
-        </p>
+
         <p className='mt-1 text-xs text-slate-500'>
-          Bora fechar o caixinha de hoje de forma rápida e tranquila?
+          Bora fechar o caixa de hoje de forma rápida e tranquila?
         </p>
 
         <div className='mt-3 border-t border-slate-100 pt-2'>

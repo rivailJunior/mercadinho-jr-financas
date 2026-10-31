@@ -15,9 +15,9 @@ export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
         >
           Resumo de Hoje
         </h2>
-        <span className='rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600'>
+        {/* <span className='rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600'>
           Tudo Equilibrado ✨
-        </span>
+        </span> */}
       </div>
 
       <div className='grid grid-cols-2 gap-3.5'>

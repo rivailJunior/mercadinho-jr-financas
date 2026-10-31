@@ -10,10 +10,10 @@ import type { CashEntry } from "@/types/cashClosing";
 type ActiveTab = 'entrada' | 'saida';
 
 const QUICK_EXPENSE_TAGS = [
-  { emoji: '🥖', label: 'Pão', value: 'Reposição de Pão' },
-  { emoji: '🥬', label: 'Feira', value: 'Hortifrúti / Feira' },
+  { emoji: '🥬', label: 'Mercadoria', value: 'Repicao Mercadoria' },
+  // { emoji: '🥬', label: 'Feira', value: 'Hortifrúti / Feira' },
   { emoji: '🧾', label: 'Fornecedor', value: 'Boleto de Fornecedor' },
-  { emoji: '🔧', label: 'Manutenção', value: 'Gás / Manutenção' },
+  { emoji: '🔧', label: 'Manutenção', value: 'Agua /Luz / Telefone / Etc' },
 ];
 
 interface CashEntryCardProps {
@@ -72,13 +72,12 @@ export const CashEntryCard = ({
           type='button'
           onClick={() => setActiveTab('entrada')}
           className={cn(
-            'flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:text-sm',
+            'flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-bold transition-all sm:text-sm',
             activeTab === 'entrada'
               ? 'bg-white text-emerald-700 font-extrabold shadow-sm'
               : 'text-slate-500 hover:text-slate-800',
           )}
         >
-          <span>💰</span>
           <span>Lançar Entrada (+)</span>
         </button>
         <button
@@ -91,7 +90,6 @@ export const CashEntryCard = ({
               : 'text-slate-500 hover:text-slate-800',
           )}
         >
-          <span>🛒</span>
           <span>Lançar Saída (-)</span>
         </button>
       </div>
@@ -191,7 +189,7 @@ export const CashEntryCard = ({
                   key={tag.label}
                   type='button'
                   onClick={() => onExpenseDescriptionChange(tag.value)}
-                  className='rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200'
+                  className='rounded-lg bg-slate-100 px-1.5 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200'
                 >
                   {tag.emoji} {tag.label}
                 </button>
