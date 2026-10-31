@@ -267,8 +267,9 @@ export const MovementChart = ({
                 onClick={() => setSelectedIndex(i)}
                 aria-pressed={i === activeIndex}
                 aria-label={`Ver movimento ${i === todayIndex ? currentAriaLabel : `de ${day.dia}`}`}
-                className={`flex-1 cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
-                  }`}
+                className={`flex-1 cursor-pointer transition-colors ${
+                  i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+                }`}
               >
                 {i === todayIndex ? currentLabel : day.diaAbreviado}
               </button>
