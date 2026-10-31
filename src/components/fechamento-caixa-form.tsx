@@ -30,6 +30,7 @@ export const FechamentoCaixaForm = ({
   const [expenseValue, setExpenseValue] = useState(initialSaida);
   const [expenseDescription, setExpenseDescription] = useState("");
   const [retroactiveOpen, setRetroactiveOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<(ToastMessage & { id: number }) | null>(null);
 
   const handleCashChange = useCallback((values: CashEntry) => {
@@ -40,33 +41,46 @@ export const FechamentoCaixaForm = ({
 
   const handleSaveEntrada = useCallback(async () => {
     const total = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
-    const result = await saveEntrada({ total });
-    if (result.ok) {
-      setToast({ id: Date.now(), variant: "success", message: "Entrada Salva!" });
-      router.refresh();
-    } else {
-      setToast({
-        id: Date.now(),
-        variant: "error",
-        message: `Erro ao salvar entrada: ${result.error}`,
-      });
+    setIsSaving(true);
+    try {
+      const result = await saveEntrada({ total });
+      if (result.ok) {
+        setCashEntry({ dinheiroGaveta: 0, cartao: 0, pix: 0 });
+        setToast({ id: Date.now(), variant: "success", message: "Entrada Salva!" });
+        router.refresh();
+      } else {
+        setToast({
+          id: Date.now(),
+          variant: "error",
+          message: `Erro ao salvar entrada: ${result.error}`,
+        });
+      }
+    } finally {
+      setIsSaving(false);
     }
   }, [cashEntry, router]);
 
   const handleSaveSaida = useCallback(async () => {
-    const result = await saveSaida({
-      valor: expenseValue,
-      descricao: expenseDescription,
-    });
-    if (result.ok) {
-      setToast({ id: Date.now(), variant: "success", message: "Saída Salva!" });
-      router.refresh();
-    } else {
-      setToast({
-        id: Date.now(),
-        variant: "error",
-        message: `Erro ao salvar saída: ${result.error}`,
+    setIsSaving(true);
+    try {
+      const result = await saveSaida({
+        valor: expenseValue,
+        descricao: expenseDescription,
       });
+      if (result.ok) {
+        setExpenseValue(0);
+        setExpenseDescription("");
+        setToast({ id: Date.now(), variant: "success", message: "Saída Salva!" });
+        router.refresh();
+      } else {
+        setToast({
+          id: Date.now(),
+          variant: "error",
+          message: `Erro ao salvar saída: ${result.error}`,
+        });
+      }
+    } finally {
+      setIsSaving(false);
     }
   }, [expenseValue, expenseDescription, router]);
 
@@ -98,6 +112,7 @@ export const FechamentoCaixaForm = ({
           onExpenseDescriptionChange={setExpenseDescription}
           onSaveEntrada={handleSaveEntrada}
           onSaveSaida={handleSaveSaida}
+          isSaving={isSaving}
         />
 
         <DailySummaryCard summary={summary} />
