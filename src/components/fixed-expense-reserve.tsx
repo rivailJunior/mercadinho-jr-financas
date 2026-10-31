@@ -62,9 +62,6 @@ export const FixedExpenseReserve = ({ expenses, totalReservaDiaria }: FixedExpen
             {formatCurrency(totalReservaDiaria)}
           </span>
         </div>
-        <span className="rounded-xl bg-white px-2.5 py-1 text-xs font-bold text-emerald-700 shadow-sm">
-          Dia Pago! ✅
-        </span>
       </div>
     </section>
   );

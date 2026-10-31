@@ -38,8 +38,6 @@ const buildAreaPath = (points: { x: number; y: number }[]) => {
   return `${line} L ${last.x},${SVG_HEIGHT} L ${first.x},${SVG_HEIGHT} Z`;
 };
 
-const clampPillX = (x: number) => Math.min(Math.max(x - PILL_WIDTH / 2, 0), SVG_WIDTH - PILL_WIDTH);
-
 export interface MovementChartDay {
   /** Full label for the selected day, e.g. "Terça" or "15 de out.". */
   dia: string;
@@ -189,7 +187,7 @@ export const MovementChart = ({
             className="fill-white stroke-indigo-600 stroke-3"
           />
           <circle cx={selEntrada.x} cy={selEntrada.y} r="2.5" className="fill-indigo-600" />
-          <g transform={`translate(${clampPillX(selEntrada.x)}, ${selEntrada.y - 22})`}>
+          {/* <g transform={`translate(${clampPillX(selEntrada.x, PILL_WIDTH, SVG_WIDTH)}, ${selEntrada.y - 22})`}>
             <rect width={PILL_WIDTH} height={PILL_HEIGHT} rx="8" fill="#1e293b" />
             <text
               x={PILL_WIDTH / 2}
@@ -201,7 +199,7 @@ export const MovementChart = ({
             >
               {formatCurrency(selectedDay.valor)}
             </text>
-          </g>
+          </g> */}
 
           {/* Selected day dot — Saída */}
           <circle
@@ -211,7 +209,7 @@ export const MovementChart = ({
             className="fill-white stroke-rose-500 stroke-2"
           />
           <circle cx={selSaida.x} cy={selSaida.y} r="2" className="fill-rose-500" />
-          <g transform={`translate(${clampPillX(selSaida.x)}, ${saidaPillY})`}>
+          {/* <g transform={`translate(${clampPillX(selSaida.x, PILL_WIDTH, SVG_WIDTH)}, ${saidaPillY})`}>
             <rect width={PILL_WIDTH} height={PILL_HEIGHT} rx="8" fill="#be123c" />
             <text
               x={PILL_WIDTH / 2}
@@ -223,7 +221,7 @@ export const MovementChart = ({
             >
               {formatCurrency(selectedDay.saida)}
             </text>
-          </g>
+          </g> */}
 
           {/* Tap targets — one invisible column per day */}
           {data.map((day, i) => {
@@ -246,16 +244,16 @@ export const MovementChart = ({
         </svg>
 
         {/* Legend */}
-        <div className="mt-1 flex items-center justify-center gap-4 text-[10px] font-bold">
+        {/* <div className="mt-1 flex items-center justify-center gap-4 text-[10px] font-bold">
           <span className="flex items-center gap-1 text-indigo-600">
-            <span className="inline-block h-2 w-4 rounded-full bg-brand-blue" />
+            <span className="inline-block h-2 w-2 rounded-full bg-brand-blue" />
             Entradas
           </span>
           <span className="flex items-center gap-1 text-rose-500">
-            <span className="inline-block h-2 w-4 rounded-full bg-brand-coral" />
+            <span className="inline-block h-2 w-2 rounded-full bg-brand-coral" />
             Saídas
           </span>
-        </div>
+        </div> */}
 
         {/* Day labels */}
         <div className="mt-2 flex justify-between px-1 text-[11px] font-bold text-slate-400">
@@ -269,9 +267,8 @@ export const MovementChart = ({
                 onClick={() => setSelectedIndex(i)}
                 aria-pressed={i === activeIndex}
                 aria-label={`Ver movimento ${i === todayIndex ? currentAriaLabel : `de ${day.dia}`}`}
-                className={`flex-1 cursor-pointer transition-colors ${
-                  i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
-                }`}
+                className={`flex-1 cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+                  }`}
               >
                 {i === todayIndex ? currentLabel : day.diaAbreviado}
               </button>
