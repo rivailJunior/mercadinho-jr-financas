@@ -47,30 +47,25 @@ export const TransactionItem = ({ lancamento, onDelete }: TransactionItemProps) 
             {lancamento.descricao}
           </span>
           <div className="mt-0.5 flex items-center gap-2">
-            <span
-              className={cn(
-                "rounded-md px-2 py-0.5 text-[10px] font-extrabold",
-                isEntrada ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
-              )}
-            >
-              {isEntrada ? "Entrada (+)" : "Saída (-)"}
-            </span>
             <span className="text-xs font-medium text-slate-400">
               {formatLancamentoDate(lancamento.dataReferencia)}
+            </span>
+          </div>
+          <div className="mt-1">
+
+            <span
+              className={cn(
+                "tabular-nums whitespace-nowrap text-sm font-extrabold",
+                isEntrada ? "text-emerald-600" : "text-rose-600",
+              )}
+            >
+              {isEntrada ? "+" : "-"} {formatCurrency(lancamento.valor)}
             </span>
           </div>
         </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <span
-          className={cn(
-            "tabular-nums whitespace-nowrap text-sm font-extrabold",
-            isEntrada ? "text-emerald-600" : "text-rose-600",
-          )}
-        >
-          {isEntrada ? "+" : "-"} {formatCurrency(lancamento.valor)}
-        </span>
         <button
           type="button"
           aria-label={`Excluir ${lancamento.descricao}`}
