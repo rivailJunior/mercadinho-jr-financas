@@ -1,16 +1,17 @@
 import { BottomNav, GreetingHeader, RelatorioScreen } from "@/components";
-import { currentMonthKey, isValidMonthKey } from "@/lib/dates";
+import { currentMonthKey, isValidISODate, isValidMonthKey } from "@/lib/dates";
 import { getMonthlyReport } from "@/lib/report-data";
 
 export const dynamic = "force-dynamic";
 
 interface RelatorioPageProps {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ mes?: string; dia?: string }>;
 }
 
 export default async function RelatorioPage({ searchParams }: RelatorioPageProps) {
-  const { mes } = await searchParams;
+  const { mes, dia } = await searchParams;
   const mesAtual = mes && isValidMonthKey(mes) ? mes : currentMonthKey();
+  const diaSelecionado = dia && isValidISODate(dia) && dia.startsWith(mesAtual) ? dia : undefined;
   const report = await getMonthlyReport(mesAtual);
 
   return (
@@ -18,7 +19,7 @@ export default async function RelatorioPage({ searchParams }: RelatorioPageProps
       <GreetingHeader />
 
       <div className="flex-1 space-y-6 px-5 pt-5 pb-6">
-        <RelatorioScreen report={report} />
+        <RelatorioScreen report={report} diaSelecionado={diaSelecionado} />
       </div>
 
       <BottomNav active="relatorio" />

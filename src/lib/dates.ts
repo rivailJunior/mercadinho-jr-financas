@@ -84,6 +84,13 @@ export const formatShortISODate = (isoDate: string): string =>
 /** Whether a string is a valid YYYY-MM month key. */
 export const isValidMonthKey = (mes: string): boolean => /^\d{4}-(0[1-9]|1[0-2])$/.test(mes);
 
+/** Whether a string is a valid YYYY-MM-DD calendar date. */
+export const isValidISODate = (isoDate: string): boolean => {
+  if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(isoDate)) return false;
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return day <= new Date(Date.UTC(year, month, 0)).getUTCDate();
+};
+
 /** Current month key (YYYY-MM) in Manaus. */
 export const currentMonthKey = (): string => todayISODate().slice(0, 7);
 

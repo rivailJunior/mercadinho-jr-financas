@@ -13,9 +13,11 @@ import { useCallback, useMemo, useState } from "react";
 
 interface RelatorioScreenProps {
   report: MonthlyReport;
+  /** Selected YYYY-MM-DD date, if any. */
+  diaSelecionado?: string;
 }
 
-export const RelatorioScreen = ({ report }: RelatorioScreenProps) => {
+export const RelatorioScreen = ({ report, diaSelecionado }: RelatorioScreenProps) => {
   const router = useRouter();
   const [filter, setFilter] = useState<LancamentoFilter>("all");
   const [deleteTarget, setDeleteTarget] = useState<Lancamento | null>(null);
@@ -34,8 +36,12 @@ export const RelatorioScreen = ({ report }: RelatorioScreenProps) => {
 
   const filtered = useMemo(
     () =>
-      filter === "all" ? report.lancamentos : report.lancamentos.filter((l) => l.tipo === filter),
-    [report.lancamentos, filter],
+      report.lancamentos.filter(
+        (l) =>
+          (filter === "all" || l.tipo === filter) &&
+          (!diaSelecionado || l.dataReferencia === diaSelecionado),
+      ),
+    [report.lancamentos, filter, diaSelecionado],
   );
 
   const handleDismissToast = useCallback(() => setToast(null), []);
@@ -68,6 +74,7 @@ export const RelatorioScreen = ({ report }: RelatorioScreenProps) => {
 
       <MonthFilterCard
         mesAtual={report.mes}
+        diaSelecionado={diaSelecionado}
         filter={filter}
         counts={counts}
         onFilterChange={setFilter}

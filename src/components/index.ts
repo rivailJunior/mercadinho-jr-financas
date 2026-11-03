@@ -13,6 +13,7 @@ export { FechamentoCaixaForm } from "./fechamento-caixa-form";
 export { BottomNav } from "./bottom-nav";
 export { Toast } from "./toast";
 export { MonthFilterCard } from "./month-filter-card";
+export { CalendarPopup } from "./calendar-popup";
 export { MonthlySummaryCard } from "./monthly-summary-card";
 export { TransactionsCard } from "./transactions-card";
 export { TransactionItem } from "./transaction-item";
