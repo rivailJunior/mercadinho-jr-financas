@@ -63,6 +63,8 @@ interface MovementChartProps {
   currentLabel?: string;
   /** Accessible name for the latest point's button (default "de hoje"). */
   currentAriaLabel?: string;
+  /** Reference value drawn as a flat gray line — the minimum expected per period. */
+  minimumExpected?: number;
 }
 
 export const MovementChart = ({
@@ -75,6 +77,7 @@ export const MovementChart = ({
   axisLabelEvery = 1,
   currentLabel = "Hoje",
   currentAriaLabel = "de hoje",
+  minimumExpected,
 }: MovementChartProps) => {
   const [selectedIndex, setSelectedIndex] = useState(data.length - 1);
 
@@ -83,7 +86,16 @@ export const MovementChart = ({
   const todayIndex = data.length - 1;
   const activeIndex = Math.min(Math.max(selectedIndex, 0), todayIndex);
   const step = SVG_WIDTH / (data.length - 1);
-  const maxValue = Math.max(...data.map((d) => d.valor), ...data.map((d) => d.saida), 1);
+  const maxValue = Math.max(
+    ...data.map((d) => d.valor),
+    ...data.map((d) => d.saida),
+    minimumExpected ?? 0,
+    1,
+  );
+  const minimumY =
+    minimumExpected == null
+      ? null
+      : PADDING_TOP + CHART_HEIGHT - (minimumExpected / maxValue) * CHART_HEIGHT;
 
   const entradaPoints = buildPoints(
     data.map((d) => d.valor),
@@ -132,6 +144,11 @@ export const MovementChart = ({
           <span className="tabular-nums text-[11px] font-black text-rose-500">
             Saída: {formatCurrency(selectedDay.saida)}
           </span>
+          {minimumExpected != null && (
+            <span className="tabular-nums text-[11px] font-black text-slate-400">
+              Objetivo: {formatCurrency(minimumExpected)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -178,6 +195,19 @@ export const MovementChart = ({
             strokeWidth="3"
             strokeDasharray="6 3"
           />
+
+          {/* Minimum expected (gray reference) */}
+          {minimumY != null && (
+            <line
+              x1={0}
+              y1={minimumY}
+              x2={SVG_WIDTH}
+              y2={minimumY}
+              stroke="#94a3b8"
+              strokeDasharray="4 4"
+              strokeWidth="1.5"
+            />
+          )}
 
           {/* Selected day dot — Entrada */}
           <circle
@@ -267,9 +297,8 @@ export const MovementChart = ({
                 onClick={() => setSelectedIndex(i)}
                 aria-pressed={i === activeIndex}
                 aria-label={`Ver movimento ${i === todayIndex ? currentAriaLabel : `de ${day.dia}`}`}
-                className={`flex-1 cursor-pointer transition-colors ${
-                  i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
-                }`}
+                className={`flex-1 cursor-pointer transition-colors ${i === activeIndex ? "font-extrabold text-indigo-600" : "hover:text-slate-600"
+                  }`}
               >
                 {i === todayIndex ? currentLabel : day.diaAbreviado}
               </button>

@@ -13,5 +13,6 @@ export const WeeklyChart = ({ data }: WeeklyChartProps) => (
     titleId="weekly-chart-title"
     chartAriaLabel="Gráfico de curvas do movimento semanal"
     gradientPrefix="weekly"
+    minimumExpected={1000}
   />
 );

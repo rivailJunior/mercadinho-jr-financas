@@ -16,5 +16,6 @@ export const YearlyChart = ({ data }: YearlyChartProps) => (
     gradientPrefix="yearly"
     currentLabel="Atual"
     currentAriaLabel="do mês atual"
+    minimumExpected={30000}
   />
 );
