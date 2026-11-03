@@ -110,6 +110,23 @@ export async function saveSaida(input: {
   return { ok: true };
 }
 
+const deleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export async function deleteLancamento(input: { id: string }): Promise<SaveResult> {
+  const parsed = deleteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Lancamento invalido." };
+  }
+
+  const supabase = createSupabaseClient();
+  const { error } = await supabase.from("lancamentos_caixa").delete().eq("id", parsed.data.id);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 const retroativoSchema = z.object({
   data: z.string().min(1),
   tipo: z.enum(["ENTRADA", "SAIDA"]),

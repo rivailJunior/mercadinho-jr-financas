@@ -49,3 +49,30 @@ export interface RetroactiveEntry {
   pix: number;
   saidas: number;
 }
+
+export type LancamentoTipo = "ENTRADA" | "SAIDA";
+
+export type LancamentoFilter = "all" | LancamentoTipo;
+
+export interface Lancamento {
+  id: string;
+  tipo: LancamentoTipo;
+  descricao: string;
+  valor: number;
+  /** YYYY-MM-DD */
+  dataReferencia: string;
+}
+
+export interface MonthlyReportSummary {
+  totalEntradas: number;
+  totalSaidas: number;
+  totalReserva: number;
+  livreDeVerdade: number;
+}
+
+export interface MonthlyReport {
+  /** YYYY-MM */
+  mes: string;
+  summary: MonthlyReportSummary;
+  lancamentos: Lancamento[];
+}

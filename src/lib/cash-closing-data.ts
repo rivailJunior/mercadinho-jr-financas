@@ -1,40 +1,14 @@
-import { daysAgoISODate, todayISODate, weekdayIndexFromISODate } from "@/lib/dates";
+import {
+  DIAS_SEMANA,
+  DIAS_SEMANA_ABREV,
+  MESES,
+  MESES_ABREV,
+  daysAgoISODate,
+  todayISODate,
+  weekdayIndexFromISODate,
+} from "@/lib/dates";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import type { FixedExpense, WeeklyDay, YearlyMonth } from "@/types/cashClosing";
-
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
-
-const DIAS_SEMANA_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
-
-const MESES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-] as const;
-
-const MESES_ABREV = [
-  "Jan",
-  "Fev",
-  "Mar",
-  "Abr",
-  "Mai",
-  "Jun",
-  "Jul",
-  "Ago",
-  "Set",
-  "Out",
-  "Nov",
-  "Dez",
-] as const;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
