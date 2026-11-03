@@ -59,13 +59,13 @@ export const MonthFilterCard = ({
         </Link>
       </div>
 
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" role="tablist">
+      <div className="flex md:flex-row flex-col items-center gap-1.5 overflow-x-auto pb-0.5" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={filter === "all"}
           onClick={() => onFilterChange("all")}
-          className={pillClass(filter === "all")}
+          className={pillClass(filter === "all") + " md:flex-1 w-full"}
         >
           <List className="h-4 w-4" aria-hidden="true" />
           Todos ({counts.total})
@@ -75,7 +75,7 @@ export const MonthFilterCard = ({
           role="tab"
           aria-selected={filter === "ENTRADA"}
           onClick={() => onFilterChange("ENTRADA")}
-          className={pillClass(filter === "ENTRADA")}
+          className={pillClass(filter === "ENTRADA") + " md:flex-1 w-full"}
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
           Entradas (+{counts.entradas})
@@ -85,7 +85,7 @@ export const MonthFilterCard = ({
           role="tab"
           aria-selected={filter === "SAIDA"}
           onClick={() => onFilterChange("SAIDA")}
-          className={pillClass(filter === "SAIDA")}
+          className={pillClass(filter === "SAIDA") + " md:flex-1 w-full"}
         >
           <span className="h-2 w-2 rounded-full bg-rose-500" />
           Saídas (-{counts.saidas})
