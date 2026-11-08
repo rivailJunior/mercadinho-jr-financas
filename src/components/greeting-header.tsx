@@ -1,3 +1,4 @@
+import { LogoutButton } from "@/components/logout-button";
 import { todayISODate, weekdayIndexFromISODate } from "@/lib/dates";
 
 const WEEKDAYS = [
@@ -49,7 +50,10 @@ export const GreetingHeader = ({ onOpenRetroactive }: GreetingHeaderProps) => {
         <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
           Mercadinho Jr
         </span>
-        <span className="mt-0.5 text-sm font-semibold text-indigo-600">{weekday}</span>
+        <span className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-indigo-600">
+          {weekday}
+          <LogoutButton />
+        </span>
       </div>
 
       <div className="mt-2 text-left">
