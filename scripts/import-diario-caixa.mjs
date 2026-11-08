@@ -21,8 +21,35 @@ import { dirname, resolve } from "node:path";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CSV_PATH = resolve(HERE, "../data/diario-caixa.csv");
 
-const URL = "https://vizyhhyugnufyijtwmyj.supabase.co";
-const ANON_KEY = "sb_publishable_Qc3PUa9ZaP4uWhlo1Fu5Iw_ZeBoyFKy";
+// Credentials come from the environment — never hardcode keys in this file.
+// Reads .env at the repo root when present so it works without extra tooling.
+function loadEnv() {
+  try {
+    const text = readFileSync(resolve(HERE, "../.env"), "utf8");
+    for (const line of text.split("\n")) {
+      const i = line.indexOf("=");
+      if (i <= 0 || line.startsWith("#")) continue;
+      const key = line.slice(0, i).trim();
+      if (!(key in process.env)) {
+        process.env[key] = line.slice(i + 1).trim().replace(/^['"]|['"]$/g, "");
+      }
+    }
+  } catch {
+    /* .env is optional when env vars are provided directly */
+  }
+}
+loadEnv();
+
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+if (!URL || !ANON_KEY) {
+  console.error(
+    "Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (no .env ou no ambiente).",
+  );
+  process.exit(1);
+}
 const WRITE = process.argv.includes("--write");
 
 const ORIGEM = "GOOGLE_SHEET";
