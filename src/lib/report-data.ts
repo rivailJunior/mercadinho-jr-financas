@@ -6,7 +6,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Lançamentos and aggregated totals for a given month key (YYYY-MM). */
 export const getMonthlyReport = async (mes: string): Promise<MonthlyReport> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const { start, end } = monthBounds(mes);
 
   const [{ data: lancamentos }, { data: resumo }] = await Promise.all([

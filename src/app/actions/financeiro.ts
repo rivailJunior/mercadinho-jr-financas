@@ -35,7 +35,7 @@ export async function criarConta(input: {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de conta inválidos." };
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
 
@@ -68,7 +68,7 @@ export async function registrarMovimento(input: {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de movimentação inválidos." };
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
 
@@ -101,7 +101,7 @@ export async function criarTransferencia(input: {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de transferência inválidos." };
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
 
@@ -130,7 +130,7 @@ export async function aportarReserva(input: {
 }): Promise<SaveResult> {
   const parsed = reservaMovSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de aporte inválidos." };
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
   const { error } = await supabase.rpc("aportar_reserva", {
@@ -149,7 +149,7 @@ export async function retirarReserva(input: {
 }): Promise<SaveResult> {
   const parsed = reservaMovSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de retirada inválidos." };
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
   const { error } = await supabase.rpc("retirar_reserva", {
@@ -175,7 +175,7 @@ export async function transferirReservas(input: {
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de transferência inválidos." };
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
   const { error } = await supabase.rpc("transferir_entre_reservas", {
@@ -204,7 +204,7 @@ export async function pagarFatura(input: {
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados de pagamento inválidos." };
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
   const { error } = await supabase.rpc("pagar_fatura", {

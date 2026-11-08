@@ -23,7 +23,7 @@ export interface PainelFinanceiro {
 
 /** Resolves the default establishment id (single-store app). */
 export const getEstabelecimentoId = async (): Promise<string | null> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const { data } = await supabase
     .from("estabelecimentos")
     .select("id")
@@ -41,7 +41,7 @@ export const getEstabelecimentoId = async (): Promise<string | null> => {
  * no float arithmetic anywhere.
  */
 export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return null;
 

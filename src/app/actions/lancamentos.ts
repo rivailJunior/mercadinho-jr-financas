@@ -14,7 +14,7 @@ export interface SaveResult {
 
 /** Resolves the default establishment id (single-store app). */
 const getEstabelecimentoId = async (
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
 ): Promise<string | null> => {
   const { data } = await supabase
     .from("estabelecimentos")
@@ -27,7 +27,7 @@ const getEstabelecimentoId = async (
 
 /** Resolves a categoria id by name, falling back to null when absent. */
 const getCategoriaId = async (
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
   nome: string,
 ): Promise<number | null> => {
   const { data } = await supabase
@@ -55,7 +55,7 @@ export async function saveEntrada(input: {
     return { ok: false, error: "Valor de entrada invalido." };
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const [estabelecimentoId, categoriaId] = await Promise.all([
     getEstabelecimentoId(supabase),
     getCategoriaId(supabase, CATEGORIA_ENTRADA),
@@ -91,7 +91,7 @@ export async function saveSaida(input: {
     return { ok: false, error: "Valor ou descricao de saida invalido." };
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const [estabelecimentoId, categoriaId] = await Promise.all([
     getEstabelecimentoId(supabase),
     getCategoriaId(supabase, CATEGORIA_SAIDA),
@@ -120,7 +120,7 @@ export async function deleteLancamento(input: { id: string }): Promise<SaveResul
     return { ok: false, error: "Lancamento invalido." };
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const { error } = await supabase.from("lancamentos_caixa").delete().eq("id", parsed.data.id);
 
   if (error) return { ok: false, error: error.message };
@@ -143,7 +143,7 @@ export async function saveRetroativo(input: {
     return { ok: false, error: "Dados do lancamento retroativo invalidos." };
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const categoriaNome = parsed.data.tipo === "ENTRADA" ? CATEGORIA_ENTRADA : CATEGORIA_SAIDA;
   const [estabelecimentoId, categoriaId] = await Promise.all([
     getEstabelecimentoId(supabase),

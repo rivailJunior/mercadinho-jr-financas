@@ -14,7 +14,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Daily entradas/saídas for the last 7 days, ending today. */
 export const getWeeklyData = async (): Promise<WeeklyDay[]> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const days = Array.from({ length: 7 }, (_, i) => daysAgoISODate(6 - i));
 
   const { data } = await supabase
@@ -39,7 +39,7 @@ export const getWeeklyData = async (): Promise<WeeklyDay[]> => {
 
 /** Monthly entradas/saídas for the current year, January through the current month. */
 export const getYearlyData = async (): Promise<YearlyMonth[]> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const today = todayISODate();
   const yearStart = `${today.slice(0, 4)}-01-01`;
   const currentMonth = Number(today.slice(5, 7));
@@ -78,7 +78,7 @@ interface FixedExpensesResult {
  * (valor_mensal / dias úteis, or percentual × média diária de faturamento).
  */
 export const getFixedExpenses = async (): Promise<FixedExpensesResult> => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   const [{ data: custos }, { data: estabelecimento }] = await Promise.all([
     supabase
@@ -132,7 +132,7 @@ export const getFixedExpenses = async (): Promise<FixedExpensesResult> => {
 
 /** Aggregated entradas/saídas for the current year. */
 export const getYearlyTotals = async () => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const yearStart = `${todayISODate().slice(0, 4)}-01-01`;
 
   const { data } = await supabase
@@ -151,7 +151,7 @@ export const getYearlyTotals = async () => {
 
 /** Aggregated entradas/saídas already registered for today. */
 export const getTodayTotals = async () => {
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
   const { data } = await supabase
     .from("lancamentos_caixa")
     .select("tipo, valor")

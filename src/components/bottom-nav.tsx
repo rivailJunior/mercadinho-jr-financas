@@ -1,7 +1,8 @@
 "use client";
 
+import { signOut } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
-import { BarChart3, Home, PiggyBank, PlusCircle } from "lucide-react";
+import { BarChart3, Home, LogOut, PiggyBank, PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 type NavItem = "caixa" | "relatorio" | "financas" | "caderninho";
@@ -63,6 +64,15 @@ export const BottomNav = ({ active = "caixa" }: BottomNavProps) => {
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={() => signOut()}
+        aria-label="Sair"
+        className={itemClass(false)}
+      >
+        <LogOut className="h-6 w-6 stroke-2" />
+        <span className="text-[10px] font-bold tracking-tight">Sair</span>
+      </button>
     </nav>
   );
 };
