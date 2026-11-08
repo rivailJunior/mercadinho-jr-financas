@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 /*
  * One-time import of the "Diario Caixa" Google Sheet into lancamentos_caixa.
  *
@@ -14,9 +17,6 @@
  *   node scripts/import-diario-caixa.mjs --write   # perform the import
  */
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CSV_PATH = resolve(HERE, "../data/diario-caixa.csv");
@@ -31,7 +31,10 @@ function loadEnv() {
       if (i <= 0 || line.startsWith("#")) continue;
       const key = line.slice(0, i).trim();
       if (!(key in process.env)) {
-        process.env[key] = line.slice(i + 1).trim().replace(/^['"]|['"]$/g, "");
+        process.env[key] = line
+          .slice(i + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
       }
     }
   } catch {
@@ -42,8 +45,7 @@ loadEnv();
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 if (!URL || !ANON_KEY) {
   console.error(
     "Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (no .env ou no ambiente).",
@@ -62,7 +64,10 @@ function parseMoney(raw) {
   if (raw == null) return null;
   let s = String(raw).trim();
   if (s === "" || s === "-" || /^#/.test(s)) return null; // blank or #VALUE!
-  s = s.replace(/R\$\s?/g, "").replace(/\s/g, "").replace(/"/g, "");
+  s = s
+    .replace(/R\$\s?/g, "")
+    .replace(/\s/g, "")
+    .replace(/"/g, "");
   const neg = s.startsWith("-");
   if (neg) s = s.slice(1);
   s = s.replace(/\./g, "").replace(",", ".");
@@ -74,7 +79,9 @@ function parseMoney(raw) {
 // "03/01/2026" or "03/01/2026 19:58:58" -> {dateIso, timeStr} | null
 function parseDateTime(raw) {
   if (!raw) return null;
-  const m = String(raw).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?/);
+  const m = String(raw)
+    .trim()
+    .match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?/);
   if (!m) return null;
   const [, dd, mm, yyyy, hh = "00", mi = "00", ss = "00"] = m;
   return { dateIso: `${yyyy}-${mm}-${dd}`, timeIso: `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}` };
@@ -89,12 +96,16 @@ function parseCsvLine(line) {
     const ch = line[i];
     if (inQ) {
       if (ch === '"') {
-        if (line[i + 1] === '"') { cur += '"'; i++; }
-        else inQ = false;
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQ = false;
       } else cur += ch;
     } else if (ch === '"') inQ = true;
-    else if (ch === ",") { out.push(cur); cur = ""; }
-    else cur += ch;
+    else if (ch === ",") {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
   }
   out.push(cur);
   return out;
@@ -118,8 +129,14 @@ for (const line of dataLines) {
   const data = parseDateTime(cols[1]);
   const revenue = parseMoney(cols[2]);
 
-  if (!data) { skippedBad++; continue; }
-  if (revenue == null) { skippedBlank++; continue; }
+  if (!data) {
+    skippedBad++;
+    continue;
+  }
+  if (revenue == null) {
+    skippedBlank++;
+    continue;
+  }
 
   const prev = byDate.get(data.dateIso);
   // keep the row with the latest submission timestamp
@@ -140,12 +157,16 @@ console.log(`Skipped (no valid revenue): ${skippedBlank} | unparseable: ${skippe
 const total = rows.reduce((s, r) => s + r.revenue, 0);
 console.log(`Date range: ${rows[0]?.dateIso} -> ${rows[rows.length - 1]?.dateIso}`);
 console.log(`Total revenue across period: R$ ${total.toFixed(2)}`);
-console.log(`Min/Max day: R$ ${Math.min(...rows.map(r => r.revenue)).toFixed(2)} / R$ ${Math.max(...rows.map(r => r.revenue)).toFixed(2)}`);
+console.log(
+  `Min/Max day: R$ ${Math.min(...rows.map((r) => r.revenue)).toFixed(2)} / R$ ${Math.max(...rows.map((r) => r.revenue)).toFixed(2)}`,
+);
 
 // show a couple dedupe decisions for sanity
 console.log(`Sample: 2026-03-25 => R$ ${byDate.get("2026-03-25")?.revenue}`);
 console.log(`Sample: 2026-06-01 => R$ ${byDate.get("2026-06-01")?.revenue} (blank day refilled)`);
-console.log(`Sample: 2026-10-26 => R$ ${byDate.get("2026-10-26")?.revenue} (correction 3069 -> 2171)`);
+console.log(
+  `Sample: 2026-10-26 => R$ ${byDate.get("2026-10-26")?.revenue} (correction 3069 -> 2171)`,
+);
 
 /* ---------- write ---------- */
 
@@ -155,18 +176,46 @@ if (!WRITE) {
 }
 
 const supabase = createClient(URL, ANON_KEY);
+// RLS is restrictive: writes must run as a linked member. Provide the
+// credentials through env vars (or .env): SUPABASE_USER_EMAIL / SUPABASE_USER_PASSWORD.
+const { error: authErr } = await supabase.auth.signInWithPassword({
+  email: process.env.SUPABASE_USER_EMAIL ?? "",
+  password: process.env.SUPABASE_USER_PASSWORD ?? "",
+});
+if (authErr) {
+  console.error(
+    "Login falhou. Defina SUPABASE_USER_EMAIL e SUPABASE_USER_PASSWORD no .env.",
+    authErr.message,
+  );
+  process.exit(1);
+}
 
 const { data: est, error: estErr } = await supabase
-  .from("estabelecimentos").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
-if (estErr || !est) { console.error("No estabelecimento found:", estErr); process.exit(1); }
+  .from("estabelecimentos")
+  .select("id")
+  .order("created_at", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+if (estErr || !est) {
+  console.error("No estabelecimento found:", estErr);
+  process.exit(1);
+}
 
 const { data: cat } = await supabase
-  .from("categorias").select("id").eq("nome", CATEGORIA_ENTRADA).maybeSingle();
+  .from("categorias")
+  .select("id")
+  .eq("nome", CATEGORIA_ENTRADA)
+  .maybeSingle();
 
 // idempotency: clear previously imported rows
 const { error: delErr, count: delCount } = await supabase
-  .from("lancamentos_caixa").delete({ count: "exact" }).eq("origem", ORIGEM);
-if (delErr) { console.error("Failed clearing prior imports:", delErr); process.exit(1); }
+  .from("lancamentos_caixa")
+  .delete({ count: "exact" })
+  .eq("origem", ORIGEM);
+if (delErr) {
+  console.error("Failed clearing prior imports:", delErr);
+  process.exit(1);
+}
 console.log(`\nCleared ${delCount ?? 0} prior '${ORIGEM}' rows.`);
 
 const payload = rows.map((r) => ({
@@ -185,7 +234,10 @@ let inserted = 0;
 for (let i = 0; i < payload.length; i += CHUNK) {
   const slice = payload.slice(i, i + CHUNK);
   const { error } = await supabase.from("lancamentos_caixa").insert(slice);
-  if (error) { console.error(`Insert failed at chunk ${i}:`, error); process.exit(1); }
+  if (error) {
+    console.error(`Insert failed at chunk ${i}:`, error);
+    process.exit(1);
+  }
   inserted += slice.length;
 }
 console.log(`Inserted ${inserted} ENTRADA rows into lancamentos_caixa.`);

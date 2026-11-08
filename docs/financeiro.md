@@ -100,11 +100,16 @@ que derrubaria o caixa abaixo do mínimo.
   funcionários R$ 2.200.
 - Seed reproduzível: `node scripts/seed-financial-setup.mjs --caixa 1850 --maquininha 10363 --write`.
 
-## Segurança — estado e pendência
+## Segurança
 
-- Tabelas novas: RLS **habilitado** com políticas temporariamente abertas
-  (compatibilidade com o app sem login).
-- Tabelas legadas: RLS ainda **desabilitado** — risco conhecido, exige o
-  cutover de Auth para fechar.
-- Pendente: modelo de usuários (quem acessa) → políticas restritivas por
-  estabelecimento → habilitar RLS nas legadas.
+- **Autenticação**: email+senha via Supabase Auth (`/login`), sessão em
+  cookies (`@supabase/ssr`), middleware protege todas as rotas.
+- **RLS restritivo aplicado em todas as tabelas** (novas e legadas):
+  acesso exige sessão autenticada de usuário vinculado ao estabelecimento
+  via `usuarios_estabelecimentos` — verificado por
+  `user_manages_estabelecimento()`.
+- Views `v_saldos_contas` e `view_resumo_diario` rodam com
+  `security_invoker = on` (não contornam o RLS das tabelas base).
+- Role `anon` revogada de todas as tabelas/views/RPCs — nada é público.
+- Scripts administrativos (`seed`, `import`) autenticam como membro via
+  `SUPABASE_USER_EMAIL` / `SUPABASE_USER_PASSWORD` no `.env`.

@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 /*
  * Initial financial-management setup (one-time).
  *
@@ -19,9 +22,6 @@
  * Without --write it only prints what would be created (dry-run).
  */
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -72,10 +72,34 @@ if (caixa == null || maquininha == null) {
 // Reservas lógicas confirmadas (centavos). Não é dinheiro novo — é a destinação
 // de dinheiro que já existe no caixa.
 const RESERVAS = [
-  { nome: "Fatura do cartão", finalidade: "Cobrir a fatura mensal do cartão", valor_atual_centavos: 1000000, meta_centavos: 2000000, prioridade: 1 },
-  { nome: "Demais compromissos", finalidade: "Contas fixas e obrigações mensais", valor_atual_centavos: 221300, meta_centavos: null, prioridade: 2 },
-  { nome: "Emergência", finalidade: "Imprevistos operacionais", valor_atual_centavos: 0, meta_centavos: null, prioridade: 8 },
-  { nome: "Investimentos", finalidade: "Sobra real disponível para investir", valor_atual_centavos: 0, meta_centavos: null, prioridade: 9 },
+  {
+    nome: "Fatura do cartão",
+    finalidade: "Cobrir a fatura mensal do cartão",
+    valor_atual_centavos: 1000000,
+    meta_centavos: 2000000,
+    prioridade: 1,
+  },
+  {
+    nome: "Demais compromissos",
+    finalidade: "Contas fixas e obrigações mensais",
+    valor_atual_centavos: 221300,
+    meta_centavos: null,
+    prioridade: 2,
+  },
+  {
+    nome: "Emergência",
+    finalidade: "Imprevistos operacionais",
+    valor_atual_centavos: 0,
+    meta_centavos: null,
+    prioridade: 8,
+  },
+  {
+    nome: "Investimentos",
+    finalidade: "Sobra real disponível para investir",
+    valor_atual_centavos: 0,
+    meta_centavos: null,
+    prioridade: 9,
+  },
 ];
 
 // Compromissos mensais de referência (valores configuráveis, não dívida).
@@ -95,7 +119,9 @@ const total = caixa + maquininha;
 const reservado = RESERVAS.reduce((a, r) => a + r.valor_atual_centavos, 0);
 
 console.log("=== Configuração inicial (dry-run) ===");
-console.log(`Contas: Caixa físico R$ ${(caixa / 100).toFixed(2)} | Maquininha R$ ${(maquininha / 100).toFixed(2)}`);
+console.log(
+  `Contas: Caixa físico R$ ${(caixa / 100).toFixed(2)} | Maquininha R$ ${(maquininha / 100).toFixed(2)}`,
+);
 console.log(`Consolidado: R$ ${(total / 100).toFixed(2)}`);
 console.log(`Reservado:  R$ ${(reservado / 100).toFixed(2)}`);
 console.log(`Saldo livre: R$ ${((total - reservado) / 100).toFixed(2)}`);
@@ -108,9 +134,29 @@ if (!WRITE) {
 }
 
 const supabase = createClient(URL, KEY);
+// RLS is restrictive: writes must run as a linked member. Provide the
+// credentials through env vars (or .env): SUPABASE_USER_EMAIL / SUPABASE_USER_PASSWORD.
+const { error: authErr } = await supabase.auth.signInWithPassword({
+  email: env.SUPABASE_USER_EMAIL ?? "",
+  password: env.SUPABASE_USER_PASSWORD ?? "",
+});
+if (authErr) {
+  console.error(
+    "Login falhou. Defina SUPABASE_USER_EMAIL e SUPABASE_USER_PASSWORD no .env.",
+    authErr.message,
+  );
+  process.exit(1);
+}
 const { data: est, error: estErr } = await supabase
-  .from("estabelecimentos").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
-if (estErr || !est) { console.error("Estabelecimento não encontrado:", estErr); process.exit(1); }
+  .from("estabelecimentos")
+  .select("id")
+  .order("created_at", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+if (estErr || !est) {
+  console.error("Estabelecimento não encontrado:", estErr);
+  process.exit(1);
+}
 const estId = est.id;
 
 const hoje = new Date().toISOString().slice(0, 10);
@@ -119,17 +165,22 @@ const hoje = new Date().toISOString().slice(0, 10);
 // partial previous run can be completed safely by re-running this script.
 const countOf = async (table) => {
   const { count } = await supabase
-    .from(table).select("id", { count: "exact", head: true })
-    .eq("estabelecimento_id", estId).is("deleted_at", null);
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq("estabelecimento_id", estId)
+    .is("deleted_at", null);
   return count ?? 0;
 };
 
 let reservasInsert;
 if ((await countOf("contas_financeiras")) === 0) {
-  const { error: cErr } = await supabase.from("contas_financeiras").insert(
-    contas.map((c) => ({ ...c, estabelecimento_id: estId, data_saldo_inicial: hoje })),
-  );
-  if (cErr) { console.error("Erro criando contas:", cErr); process.exit(1); }
+  const { error: cErr } = await supabase
+    .from("contas_financeiras")
+    .insert(contas.map((c) => ({ ...c, estabelecimento_id: estId, data_saldo_inicial: hoje })));
+  if (cErr) {
+    console.error("Erro criando contas:", cErr);
+    process.exit(1);
+  }
   console.log(`Criadas ${contas.length} contas.`);
 } else {
   console.log("Contas já existem — pulando.");
@@ -140,13 +191,18 @@ if ((await countOf("reservas_financeiras")) === 0) {
     .from("reservas_financeiras")
     .insert(RESERVAS.map((r) => ({ ...r, estabelecimento_id: estId })))
     .select("id, nome");
-  if (rErr) { console.error("Erro criando reservas:", rErr); process.exit(1); }
+  if (rErr) {
+    console.error("Erro criando reservas:", rErr);
+    process.exit(1);
+  }
   reservasInsert = data;
   console.log(`Criadas ${reservasInsert.length} reservas.`);
 } else {
   const { data } = await supabase
-    .from("reservas_financeiras").select("id, nome")
-    .eq("estabelecimento_id", estId).is("deleted_at", null);
+    .from("reservas_financeiras")
+    .select("id, nome")
+    .eq("estabelecimento_id", estId)
+    .is("deleted_at", null);
   reservasInsert = data ?? [];
   console.log("Reservas já existem — pulando.");
 }
@@ -162,7 +218,10 @@ if ((await countOf("compromissos_financeiros")) === 0) {
       status: "PENDENTE",
     })),
   );
-  if (kErr) { console.error("Erro criando compromissos:", kErr); process.exit(1); }
+  if (kErr) {
+    console.error("Erro criando compromissos:", kErr);
+    process.exit(1);
+  }
   console.log(`Criados ${COMPROMISSOS.length} compromissos.`);
 } else {
   console.log("Compromissos já existem — pulando.");
