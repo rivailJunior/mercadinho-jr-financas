@@ -71,7 +71,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     supabase
       .from("faturas_cartao")
       .select(
-        "id, fechamento, vencimento, valor_fechado_centavos, valor_reservado_centavos, valor_pago_centavos, status",
+        "id, fechamento, vencimento, valor_fechado_centavos, valor_reservado_centavos, valor_pago_centavos, status, compras_cartao(valor_centavos)",
       )
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
@@ -123,16 +123,24 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     status: c.status,
   }));
 
-  const faturas: Fatura[] = (faturasRows ?? []).map((f) => ({
-    id: f.id,
-    fechamento: f.fechamento,
-    vencimento: f.vencimento,
-    valorAtual: f.valor_fechado_centavos ?? 0,
-    valorFechado: f.valor_fechado_centavos ?? undefined,
-    valorReservado: f.valor_reservado_centavos,
-    valorPago: f.valor_pago_centavos,
-    status: f.status,
-  }));
+  const faturas: Fatura[] = (faturasRows ?? []).map((f) => {
+    // Open cycles have no closed amount yet — the running total is the sum of
+    // the card purchases registered in the cycle.
+    const cicloAberto = (f.compras_cartao ?? []).reduce(
+      (acc, c) => acc + (c.valor_centavos ?? 0),
+      0,
+    );
+    return {
+      id: f.id,
+      fechamento: f.fechamento,
+      vencimento: f.vencimento,
+      valorAtual: f.valor_fechado_centavos ?? cicloAberto,
+      valorFechado: f.valor_fechado_centavos ?? undefined,
+      valorReservado: f.valor_reservado_centavos,
+      valorPago: f.valor_pago_centavos,
+      status: f.status,
+    };
+  });
 
   const caixaMinimo = configRow?.caixa_minimo_centavos ?? 0;
 
