@@ -1,19 +1,11 @@
+import { SummaryCardItem } from "@/components/summary-card-item";
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
-import { CalendarClock, PiggyBank, Wallet } from "lucide-react";
+import { CalendarClock, Landmark, PiggyBank, Wallet } from "lucide-react";
 
 interface FinancialDashboardProps {
   painel: PainelFinanceiro;
 }
-
-const Stat = ({ label, value, accent }: { label: string; value: number; accent: string }) => (
-  <article className="flex flex-col justify-between rounded-3xl border border-slate-100 bg-white p-4 shadow-soft">
-    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-    <p className={`tabular-nums mt-2 text-xl font-black leading-none ${accent}`}>
-      {formatCents(value)}
-    </p>
-  </article>
-);
 
 const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
   PENDENTE: { label: "Pendente", accent: "text-slate-400" },
@@ -41,17 +33,41 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-3.5">
-          <Stat
+          <SummaryCardItem
             label="Saldo consolidado"
-            value={posicao.saldoConsolidado}
-            accent="text-slate-800"
+            value={posicao.saldoConsolidado / 100}
+            subtitle="Soma de todas as contas"
+            bgColor="bg-brand-blue"
+            labelColor="text-blue-100"
+            subtitleColor="text-blue-200"
+            barColor="bg-blue-300/40"
+            shadowClass="shadow-card-blue"
+            icon={Landmark}
           />
-          <Stat label="Total reservado" value={posicao.totalReservado} accent="text-indigo-600" />
-          <Stat
-            label="Saldo livre"
-            value={livre}
-            accent={livre >= 0 ? "text-emerald-600" : "text-rose-600"}
+          <SummaryCardItem
+            label="Total reservado"
+            value={posicao.totalReservado / 100}
+            subtitle="Guardado nos envelopes"
+            bgColor="bg-brand-deep-purple"
+            labelColor="text-indigo-100"
+            subtitleColor="text-indigo-200"
+            barColor="bg-indigo-300/40"
+            shadowClass="shadow-card-purple"
+            icon={PiggyBank}
           />
+          <div className="col-span-2">
+            <SummaryCardItem
+              label="Saldo livre"
+              value={livre / 100}
+              subtitle="Disponível pra operar"
+              bgColor={livre >= 0 ? "bg-brand-mint" : "bg-brand-coral"}
+              labelColor={livre >= 0 ? "text-emerald-100" : "text-rose-100"}
+              subtitleColor={livre >= 0 ? "text-emerald-100" : "text-rose-200"}
+              barColor={livre >= 0 ? "bg-emerald-300/40" : "bg-rose-300/40"}
+              shadowClass={livre >= 0 ? "shadow-card-mint" : "shadow-card-coral"}
+              icon={Wallet}
+            />
+          </div>
         </div>
       </section>
 
