@@ -160,18 +160,21 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       0,
       (r.valor_efetivo_centavos ?? r.valor_previsto_centavos) - (r.valor_pago_centavos ?? 0),
     );
+  // The reserve splits across bills weighted by each one's daily rate
+  // (valor ÷ 30 — the ÷30 cancels in the ratio, so we weight by valor).
+  const diarioDe = (r: CompromissoRow) => r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
   const reservadoPorCompromisso = new Map<string, Cents>();
   for (const [reservaId, rows] of porReserva) {
     const saldo = reservaSaldo.get(reservaId) ?? 0;
-    const totalPendente = rows.reduce((acc, r) => acc + pendenteDe(r), 0);
-    if (saldo <= 0 || totalPendente <= 0) continue;
+    const totalDiario = rows.reduce((acc, r) => acc + diarioDe(r), 0);
+    if (saldo <= 0 || totalDiario <= 0) continue;
     let restante = saldo;
     rows.forEach((r, i) => {
       const pendente = pendenteDe(r);
       const share =
         i === rows.length - 1
           ? Math.min(pendente, restante)
-          : Math.min(pendente, Math.floor((saldo * pendente) / totalPendente));
+          : Math.min(pendente, Math.floor((saldo * diarioDe(r)) / totalDiario));
       restante -= share;
       reservadoPorCompromisso.set(r.id, share);
     });
@@ -279,7 +282,6 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
   if (!estabelecimentoId) return null;
 
   const hoje = todayISODate();
-  const fimMes = monthBounds(hoje.slice(0, 7)).end;
 
   // The card bucket's reserve comes from the fatura's reserva_id link; the
   // compromissos bucket's reserve comes from the compromissos' reserva_id.
@@ -356,14 +358,9 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
   // Provision against the closing date (fechamento), not the due date: the
   // family wants the invoice fully funded by the time the cycle closes.
   const diasAteFatura = faturaAberta ? Math.max(1, daysBetween(hoje, faturaAberta.fechamento)) : 1;
-  // Commitments have their own due dates (água/energia on the 6th, the rest
-  // at month-end) — the bucket paces itself to the nearest unpaid one.
-  const alvoCompromissos =
-    painel.compromissos
-      .filter((c) => c.status !== "PAGO")
-      .map((c) => c.vencimento)
-      .sort()[0] ?? fimMes;
-  const diasAteCompromissos = Math.max(1, daysBetween(hoje, alvoCompromissos));
+  // Each monthly bill provisions valor ÷ 30 per day — a flat 30-day cycle
+  // per commitment, regardless of its due date inside the month.
+  const diasAteCompromissos = 30;
 
   const resultado = provisaoDiaria({
     faltaCartao,

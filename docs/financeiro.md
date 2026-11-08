@@ -110,8 +110,8 @@ Roteamento de conta:
 
 1. `ritmoCartao = faltaCartao ÷ diasAteFechamento` — a fatura precisa estar
    provisionada até o **fechamento** do ciclo (campo informativo).
-2. `ritmoCompromissos = faltaCompromissos ÷ diasAteCompromissos` — o ritmo
-   usa o vencimento do compromisso pendente mais próximo (campo
+2. `ritmoCompromissos = faltaCompromissos ÷ 30` — cada conta mensal
+   provisiona `valor ÷ 30` por dia, independente do vencimento (campo
    informativo).
 3. `disponivel = max(0, lucroDia)` — o lucro líquido do dia (entradas −
    saídas) é o que pode ser dividido.

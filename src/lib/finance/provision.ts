@@ -7,7 +7,7 @@ export interface ProvisaoInput {
   diasAteFatura: number;
   /** faltaCompromissos = Σ monthly fixed bills − what their reserve already holds. */
   faltaCompromissos: Cents;
-  /** Days until the nearest unpaid commitment's due date (clamped to ≥ 1). */
+  /** Days in the provision cycle for commitments — bills fund at valor ÷ 30 per day. */
   diasAteCompromissos: number;
   /** Today's net profit (entradas − saídas) — the source of today's earmark. */
   lucroDia: Cents;
