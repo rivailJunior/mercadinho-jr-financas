@@ -46,17 +46,15 @@ export const GreetingHeader = ({ onOpenRetroactive }: GreetingHeaderProps) => {
 
   return (
     <header className="rounded-b-[2.5rem] bg-white px-6 pb-5 pt-8 shadow-sm relative z-10">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
-          Mercadinho Jr
-        </span>
-        <span className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-indigo-600">
-          {weekday}
-          <LogoutButton />
-        </span>
+      <div className="flex items-center justify-between text-xl font-bold">
+        Mercadinho Jr
+        <LogoutButton />
       </div>
+      <span className="flex items-center gap-1 text-sm font-regular text-indigo-500">
+        {weekday}
+      </span>
 
-      <div className="mt-2 text-left">
+      <div className="mt-3 text-left">
         <p className="mt-1 text-xs text-slate-500">
           Bora fechar o caixa de hoje de forma rápida e tranquila?
         </p>
@@ -69,9 +67,9 @@ export const GreetingHeader = ({ onOpenRetroactive }: GreetingHeaderProps) => {
               className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:bg-amber-100"
             >
               <span>📅</span>
-              <span>Esqueceu de anotar algum dia?</span>
+              <span>Esqueceu algum dia?</span>
               <span className="ml-0.5 font-extrabold text-amber-900 underline">
-                Lançar data anterior
+                Lançar dia anterior
               </span>
             </button>
           </div>
