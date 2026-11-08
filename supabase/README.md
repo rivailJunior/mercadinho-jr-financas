@@ -11,7 +11,12 @@ Este diretório versiona o schema do banco (projeto `vizyhhyugnufyijtwmyj`).
 - `migrations/20261108160000_financial_management_v2.sql` adiciona o novo modelo
   financeiro (contas, movimentações, transferências, reservas, compromissos,
   faturas e compras de cartão) em **centavos inteiros (bigint)**, com enums, FKs,
-  índices, auditoria, soft delete e RLS habilitado (sem políticas ainda).
+  índices, auditoria, soft delete e RLS habilitado.
+- `migrations/20261108170000_financial_rpc_functions.sql` adiciona a view
+  `v_saldos_contas` (saldo derivado) e as RPCs transacionais atômicas.
+- `migrations/20261108180000_financial_rls_open_policies.sql` adiciona políticas
+  permissivas (equivalente à postura aberta atual do app) nas tabelas novas,
+  para uso end-to-end antes do endurecimento com Auth.
 
 ## Fluxo recomendado (quando o Supabase CLI estiver funcional nesta máquina)
 

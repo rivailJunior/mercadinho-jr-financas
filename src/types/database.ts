@@ -529,6 +529,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimentacoes_financeiras_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_contas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimentacoes_financeiras_estabelecimento_id_fkey"
             columns: ["estabelecimento_id"]
             isOneToOne: false
@@ -757,10 +764,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transferencias_conta_destino_id_fkey"
+            columns: ["conta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_contas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transferencias_conta_origem_id_fkey"
             columns: ["conta_origem_id"]
             isOneToOne: false
             referencedRelation: "contas_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_conta_origem_id_fkey"
+            columns: ["conta_origem_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_contas"
             referencedColumns: ["id"]
           },
           {
@@ -774,6 +795,25 @@ export type Database = {
       }
     }
     Views: {
+      v_saldos_contas: {
+        Row: {
+          ativo: boolean | null
+          estabelecimento_id: string | null
+          id: string | null
+          nome: string | null
+          saldo_atual_centavos: number | null
+          tipo: Database["public"]["Enums"]["conta_tipo"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_financeiras_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       view_resumo_diario: {
         Row: {
           contingencia_dia: number | null
@@ -791,7 +831,59 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      aportar_reserva: {
+        Args: {
+          p_data_referencia?: string
+          p_descricao?: string
+          p_estabelecimento_id: string
+          p_reserva_id: string
+          p_valor_centavos: number
+        }
+        Returns: undefined
+      }
+      criar_transferencia: {
+        Args: {
+          p_conta_destino_id: string
+          p_conta_origem_id: string
+          p_data_referencia?: string
+          p_descricao?: string
+          p_estabelecimento_id: string
+          p_valor_centavos: number
+        }
+        Returns: string
+      }
+      pagar_fatura: {
+        Args: {
+          p_conta_id: string
+          p_data_referencia?: string
+          p_descricao?: string
+          p_estabelecimento_id: string
+          p_fatura_id: string
+          p_valor_centavos: number
+        }
+        Returns: undefined
+      }
+      retirar_reserva: {
+        Args: {
+          p_data_referencia?: string
+          p_descricao?: string
+          p_estabelecimento_id: string
+          p_reserva_id: string
+          p_valor_centavos: number
+        }
+        Returns: undefined
+      }
+      transferir_entre_reservas: {
+        Args: {
+          p_data_referencia?: string
+          p_descricao?: string
+          p_estabelecimento_id: string
+          p_reserva_destino_id: string
+          p_reserva_origem_id: string
+          p_valor_centavos: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       compromisso_periodicidade: "UNICO" | "SEMANAL" | "MENSAL" | "ANUAL"
