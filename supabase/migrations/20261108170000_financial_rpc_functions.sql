@@ -57,14 +57,16 @@ begin
     raise exception 'conta de origem e destino devem ser diferentes';
   end if;
 
-  -- Guard: the source account must have enough balance.
-  select saldo_atual_centavos into v_saldo_origem
-  from public.v_saldos_contas
+  -- Lock the account row to serialize concurrent transfers on it, then read the
+  -- derived balance (FOR UPDATE cannot be applied to the GROUP BY view).
+  perform 1 from public.contas_financeiras
   where id = p_conta_origem_id and estabelecimento_id = p_estabelecimento_id
   for update;
-  if v_saldo_origem is null then
-    raise exception 'conta de origem nao encontrada';
-  end if;
+  if not found then raise exception 'conta de origem nao encontrada'; end if;
+
+  select saldo_atual_centavos into v_saldo_origem
+  from public.v_saldos_contas
+  where id = p_conta_origem_id;
   if v_saldo_origem < p_valor_centavos then
     raise exception 'saldo insuficiente na conta de origem';
   end if;
@@ -240,11 +242,14 @@ begin
     raise exception 'pagamento excede o saldo pendente da fatura';
   end if;
 
-  select saldo_atual_centavos into v_saldo
-  from public.v_saldos_contas
+  perform 1 from public.contas_financeiras
   where id = p_conta_id and estabelecimento_id = p_estabelecimento_id
   for update;
-  if v_saldo is null then raise exception 'conta nao encontrada'; end if;
+  if not found then raise exception 'conta nao encontrada'; end if;
+
+  select saldo_atual_centavos into v_saldo
+  from public.v_saldos_contas
+  where id = p_conta_id;
   if v_saldo < p_valor_centavos then raise exception 'saldo insuficiente na conta'; end if;
 
   insert into public.movimentacoes_financeiras

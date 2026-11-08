@@ -1,4 +1,4 @@
-import { BottomNav, FinancialDashboard, GreetingHeader } from "@/components";
+import { BottomNav, FinancialActions, FinancialDashboard, GreetingHeader } from "@/components";
 import { getPainelFinanceiro } from "@/lib/finance/data";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,14 @@ export default async function FinancasPage() {
 
       <div className="flex-1 space-y-6 px-5 pt-5 pb-6">
         {painel ? (
-          <FinancialDashboard painel={painel} />
+          <>
+            <FinancialDashboard painel={painel} />
+            <FinancialActions
+              contas={painel.contas}
+              reservas={painel.reservas}
+              faturas={painel.faturas}
+            />
+          </>
         ) : (
           <p className="rounded-3xl border border-slate-100 bg-white p-5 text-sm text-slate-500 shadow-soft">
             Não foi possível carregar a posição financeira. Verifique o estabelecimento.
