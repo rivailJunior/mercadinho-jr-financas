@@ -80,10 +80,10 @@ const RESERVAS = [
 
 // Compromissos mensais de referência (valores configuráveis, não dívida).
 const COMPROMISSOS = [
-  { nome: "Pró-labore", valor_previsto_centavos: 200000, prioridade: 3, dia_vencimento: null },
-  { nome: "Água", valor_previsto_centavos: 50000, prioridade: 4, dia_vencimento: null },
-  { nome: "Energia elétrica", valor_previsto_centavos: 90000, prioridade: 4, dia_vencimento: null },
-  { nome: "Funcionários", valor_previsto_centavos: 220000, prioridade: 5, dia_vencimento: null },
+  { nome: "Pró-labore", valor_previsto_centavos: 200000, prioridade: 3 },
+  { nome: "Água", valor_previsto_centavos: 50000, prioridade: 4 },
+  { nome: "Energia elétrica", valor_previsto_centavos: 90000, prioridade: 4 },
+  { nome: "Funcionários", valor_previsto_centavos: 220000, prioridade: 5 },
 ];
 
 const contas = [
@@ -113,42 +113,60 @@ const { data: est, error: estErr } = await supabase
 if (estErr || !est) { console.error("Estabelecimento não encontrado:", estErr); process.exit(1); }
 const estId = est.id;
 
-// Guard: don't double-seed.
-const { count } = await supabase
-  .from("contas_financeiras").select("id", { count: "exact", head: true })
-  .eq("estabelecimento_id", estId).is("deleted_at", null);
-if (count && count > 0) {
-  console.error(`Já existem ${count} contas cadastradas — abortando para não duplicar.`);
-  process.exit(1);
-}
-
 const hoje = new Date().toISOString().slice(0, 10);
 
-const { error: cErr } = await supabase.from("contas_financeiras").insert(
-  contas.map((c) => ({ ...c, estabelecimento_id: estId, data_saldo_inicial: hoje })),
-);
-if (cErr) { console.error("Erro criando contas:", cErr); process.exit(1); }
-console.log(`Criadas ${contas.length} contas.`);
+// Each step is idempotent: it only inserts when nothing exists yet, so a
+// partial previous run can be completed safely by re-running this script.
+const countOf = async (table) => {
+  const { count } = await supabase
+    .from(table).select("id", { count: "exact", head: true })
+    .eq("estabelecimento_id", estId).is("deleted_at", null);
+  return count ?? 0;
+};
 
-const { data: reservasInsert, error: rErr } = await supabase
-  .from("reservas_financeiras")
-  .insert(RESERVAS.map((r) => ({ ...r, estabelecimento_id: estId })))
-  .select("id, nome");
-if (rErr) { console.error("Erro criando reservas:", rErr); process.exit(1); }
-console.log(`Criadas ${reservasInsert.length} reservas.`);
+let reservasInsert;
+if ((await countOf("contas_financeiras")) === 0) {
+  const { error: cErr } = await supabase.from("contas_financeiras").insert(
+    contas.map((c) => ({ ...c, estabelecimento_id: estId, data_saldo_inicial: hoje })),
+  );
+  if (cErr) { console.error("Erro criando contas:", cErr); process.exit(1); }
+  console.log(`Criadas ${contas.length} contas.`);
+} else {
+  console.log("Contas já existem — pulando.");
+}
 
-const reservaCompromissos = reservasInsert.find((r) => r.nome === "Demais compromissos");
-const { error: kErr } = await supabase.from("compromissos_financeiros").insert(
-  COMPROMISSOS.map((k) => ({
-    ...k,
-    estabelecimento_id: estId,
-    periodicidade: "MENSAL",
-    reserva_id: reservaCompromissos?.id ?? null,
-    status: "PENDENTE",
-  })),
-);
-if (kErr) { console.error("Erro criando compromissos:", kErr); process.exit(1); }
-console.log(`Criados ${COMPROMISSOS.length} compromissos.`);
+if ((await countOf("reservas_financeiras")) === 0) {
+  const { data, error: rErr } = await supabase
+    .from("reservas_financeiras")
+    .insert(RESERVAS.map((r) => ({ ...r, estabelecimento_id: estId })))
+    .select("id, nome");
+  if (rErr) { console.error("Erro criando reservas:", rErr); process.exit(1); }
+  reservasInsert = data;
+  console.log(`Criadas ${reservasInsert.length} reservas.`);
+} else {
+  const { data } = await supabase
+    .from("reservas_financeiras").select("id, nome")
+    .eq("estabelecimento_id", estId).is("deleted_at", null);
+  reservasInsert = data ?? [];
+  console.log("Reservas já existem — pulando.");
+}
+
+if ((await countOf("compromissos_financeiros")) === 0) {
+  const reservaCompromissos = reservasInsert.find((r) => r.nome === "Demais compromissos");
+  const { error: kErr } = await supabase.from("compromissos_financeiros").insert(
+    COMPROMISSOS.map((k) => ({
+      ...k,
+      estabelecimento_id: estId,
+      periodicidade: "MENSAL",
+      reserva_id: reservaCompromissos?.id ?? null,
+      status: "PENDENTE",
+    })),
+  );
+  if (kErr) { console.error("Erro criando compromissos:", kErr); process.exit(1); }
+  console.log(`Criados ${COMPROMISSOS.length} compromissos.`);
+} else {
+  console.log("Compromissos já existem — pulando.");
+}
 
 // Config: caixa mínimo operacional.
 if (caixaMinimo > 0) {
