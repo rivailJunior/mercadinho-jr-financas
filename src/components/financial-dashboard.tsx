@@ -19,6 +19,11 @@ const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const { posicao, contas, reservas, compromissos } = painel;
   const livre = posicao.saldoLivre;
+  const totalPrevisto = compromissos.reduce(
+    (acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto),
+    0,
+  );
+  const totalArrecadado = compromissos.reduce((acc, c) => acc + c.valorReservado + c.valorPago, 0);
 
   return (
     <div className="space-y-6">
@@ -215,6 +220,16 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             );
           })}
         </ul>
+        {compromissos.length > 0 && (
+          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+            <span className="font-medium text-slate-500">Total do mês</span>
+            <span className="tabular-nums font-bold text-slate-800">
+              {formatCents(totalArrecadado)}
+              <span className="font-normal text-slate-400"> de </span>
+              {formatCents(totalPrevisto)}
+            </span>
+          </div>
+        )}
       </section>
     </div>
   );

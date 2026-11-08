@@ -155,33 +155,44 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     list.push(row);
     porReserva.set(row.reserva_id, list);
   }
+  const hoje = todayISODate();
+  const fimMes = monthBounds(hoje.slice(0, 7)).end;
+
   const pendenteDe = (r: CompromissoRow) =>
     Math.max(
       0,
       (r.valor_efetivo_centavos ?? r.valor_previsto_centavos) - (r.valor_pago_centavos ?? 0),
     );
-  // The reserve splits across bills weighted by each one's daily rate
-  // (valor ÷ 30 — the ÷30 cancels in the ratio, so we weight by valor).
-  const diarioDe = (r: CompromissoRow) => r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
+  // Each bill accrues its daily rate (valor ÷ 30) per day elapsed in the
+  // current cycle — i.e. since the day after the previous due date. A bill
+  // paid on the 6th has accrued 2 daily installments by the 8th.
+  const acumuladoDe = (r: CompromissoRow): Cents => {
+    const total = r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
+    const cicloInicio = vencimentoCicloAnterior(r.vencimento ?? fimMes);
+    const dias = Math.max(0, daysBetween(cicloInicio, hoje));
+    return Math.min(pendenteDe(r), Math.floor((total * dias) / 30));
+  };
   const reservadoPorCompromisso = new Map<string, Cents>();
   for (const [reservaId, rows] of porReserva) {
     const saldo = reservaSaldo.get(reservaId) ?? 0;
-    const totalDiario = rows.reduce((acc, r) => acc + diarioDe(r), 0);
-    if (saldo <= 0 || totalDiario <= 0) continue;
+    if (saldo <= 0) continue;
+    const acumulados = rows.map(acumuladoDe);
+    const totalAcumulado = acumulados.reduce((acc, v) => acc + v, 0);
+    if (totalAcumulado <= 0) continue;
+    // The reserve covers what has accrued so far; when it falls short the
+    // balance splits proportionally to each bill's accrued share.
+    const escala = Math.min(1, saldo / totalAcumulado);
     let restante = saldo;
     rows.forEach((r, i) => {
-      const pendente = pendenteDe(r);
       const share =
         i === rows.length - 1
-          ? Math.min(pendente, restante)
-          : Math.min(pendente, Math.floor((saldo * diarioDe(r)) / totalDiario));
+          ? Math.min(acumulados[i], restante)
+          : Math.min(acumulados[i], Math.floor(acumulados[i] * escala));
       restante -= share;
       reservadoPorCompromisso.set(r.id, share);
     });
   }
 
-  const hoje = todayISODate();
-  const fimMes = monthBounds(hoje.slice(0, 7)).end;
   const compromissos: Compromisso[] = (compromissosRows ?? []).map((c) => {
     const base: Compromisso = {
       id: c.id,
@@ -267,6 +278,20 @@ const daysBetween = (fromIso: string, toIso: string): number =>
     (new Date(`${toIso}T12:00:00Z`).getTime() - new Date(`${fromIso}T12:00:00Z`).getTime()) /
       86_400_000,
   );
+
+/**
+ * The due date of the previous monthly cycle. Bills due on the last day of
+ * the month keep that rule in the previous month (30/11 → 31/10, not 30/10).
+ */
+const vencimentoCicloAnterior = (iso: string): string => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const prev = new Date(Date.UTC(y, m - 2, 1));
+  const prevYm = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
+  const lastPrev = Number(monthBounds(prevYm).end.slice(8, 10));
+  const lastCur = Number(monthBounds(`${y}-${String(m).padStart(2, "0")}`).end.slice(8, 10));
+  const day = d === lastCur ? lastPrev : Math.min(d, lastPrev);
+  return `${prevYm}-${String(day).padStart(2, "0")}`;
+};
 
 /**
  * Computes the daily provision: each bucket (card invoice; other monthly
