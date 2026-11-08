@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { BarChart3, Home, PlusCircle } from "lucide-react";
+import { BarChart3, Home, PiggyBank, PlusCircle } from "lucide-react";
 import Link from "next/link";
 
-type NavItem = "caixa" | "relatorio" | "caderninho";
+type NavItem = "caixa" | "relatorio" | "financas" | "caderninho";
 
 interface BottomNavProps {
   active?: NavItem;
@@ -13,6 +13,7 @@ interface BottomNavProps {
 const NAV_ITEMS: { id: NavItem; label: string; icon: typeof Home; href?: string }[] = [
   { id: "caixa", label: "Caixa de Hoje", icon: Home, href: "/" },
   { id: "relatorio", label: "Relatório", icon: BarChart3, href: "/relatorio" },
+  { id: "financas", label: "Finanças", icon: PiggyBank, href: "/financas" },
   { id: "caderninho", label: "Caderninho", icon: PlusCircle },
 ];
 
