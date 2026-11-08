@@ -18,6 +18,7 @@ export default async function FinancasPage() {
               contas={painel.contas}
               reservas={painel.reservas}
               faturas={painel.faturas}
+              compromissos={painel.compromissos}
             />
           </>
         ) : (

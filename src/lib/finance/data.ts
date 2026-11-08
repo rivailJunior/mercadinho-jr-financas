@@ -67,7 +67,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     supabase
       .from("compromissos_financeiros")
       .select(
-        "id, nome, valor_previsto_centavos, valor_efetivo_centavos, prioridade, vencimento, status",
+        "id, nome, valor_previsto_centavos, valor_efetivo_centavos, valor_pago_centavos, prioridade, vencimento, status",
       )
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
@@ -120,7 +120,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     valorPrevisto: c.valor_previsto_centavos,
     valorEfetivo: c.valor_efetivo_centavos ?? undefined,
     valorReservado: 0,
-    valorPago: 0,
+    valorPago: c.valor_pago_centavos ?? 0,
     vencimento: c.vencimento ?? "",
     prioridade: c.prioridade,
     status: c.status,

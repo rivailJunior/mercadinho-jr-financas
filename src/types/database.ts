@@ -99,6 +99,7 @@ export type Database = {
           categoria_id: number | null;
           created_at: string;
           deleted_at: string | null;
+          destino_conta_id: string | null;
           estabelecimento_id: string;
           id: string;
           nome: string;
@@ -108,6 +109,7 @@ export type Database = {
           status: Database["public"]["Enums"]["compromisso_status"];
           updated_at: string;
           valor_efetivo_centavos: number | null;
+          valor_pago_centavos: number;
           valor_previsto_centavos: number;
           vencimento: string | null;
         };
@@ -116,6 +118,7 @@ export type Database = {
           categoria_id?: number | null;
           created_at?: string;
           deleted_at?: string | null;
+          destino_conta_id?: string | null;
           estabelecimento_id: string;
           id?: string;
           nome: string;
@@ -125,6 +128,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["compromisso_status"];
           updated_at?: string;
           valor_efetivo_centavos?: number | null;
+          valor_pago_centavos?: number;
           valor_previsto_centavos?: number;
           vencimento?: string | null;
         };
@@ -133,6 +137,7 @@ export type Database = {
           categoria_id?: number | null;
           created_at?: string;
           deleted_at?: string | null;
+          destino_conta_id?: string | null;
           estabelecimento_id?: string;
           id?: string;
           nome?: string;
@@ -142,6 +147,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["compromisso_status"];
           updated_at?: string;
           valor_efetivo_centavos?: number | null;
+          valor_pago_centavos?: number;
           valor_previsto_centavos?: number;
           vencimento?: string | null;
         };
@@ -856,6 +862,17 @@ export type Database = {
         };
         Returns: string;
       };
+      pagar_compromisso: {
+        Args: {
+          p_compromisso_id: string;
+          p_conta_id: string;
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
       pagar_fatura: {
         Args: {
           p_conta_id: string;
@@ -891,7 +908,13 @@ export type Database = {
     };
     Enums: {
       compromisso_periodicidade: "UNICO" | "SEMANAL" | "MENSAL" | "ANUAL";
-      compromisso_status: "PENDENTE" | "PARCIALMENTE_RESERVADO" | "RESERVADO" | "PAGO" | "VENCIDO";
+      compromisso_status:
+        | "PENDENTE"
+        | "PARCIALMENTE_RESERVADO"
+        | "RESERVADO"
+        | "PARCIALMENTE_PAGO"
+        | "PAGO"
+        | "VENCIDO";
       conta_tipo: "CAIXA_FISICO" | "MAQUININHA" | "BANCO";
       fatura_status: "ABERTA" | "FECHADA" | "PARCIALMENTE_PAGA" | "PAGA" | "VENCIDA";
       movimento_natureza:
@@ -1028,7 +1051,14 @@ export const Constants = {
   public: {
     Enums: {
       compromisso_periodicidade: ["UNICO", "SEMANAL", "MENSAL", "ANUAL"],
-      compromisso_status: ["PENDENTE", "PARCIALMENTE_RESERVADO", "RESERVADO", "PAGO", "VENCIDO"],
+      compromisso_status: [
+        "PENDENTE",
+        "PARCIALMENTE_RESERVADO",
+        "RESERVADO",
+        "PARCIALMENTE_PAGO",
+        "PAGO",
+        "VENCIDO",
+      ],
       conta_tipo: ["CAIXA_FISICO", "MAQUININHA", "BANCO"],
       fatura_status: ["ABERTA", "FECHADA", "PARCIALMENTE_PAGA", "PAGA", "VENCIDA"],
       movimento_natureza: [

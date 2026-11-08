@@ -194,6 +194,37 @@ export async function guardarParaFixas(): Promise<SaveResult> {
   return { ok: true };
 }
 
+// --- Compromissos (contas fixas) ----------------------------------------------
+
+export async function pagarCompromisso(input: {
+  compromissoId: string;
+  contaId: string;
+  valorCentavos: number;
+  descricao?: string;
+}): Promise<SaveResult> {
+  const schema = z.object({
+    compromissoId: uuidSchema,
+    contaId: uuidSchema,
+    valorCentavos: centsSchema,
+    descricao: z.string().optional(),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Dados de pagamento inválidos." };
+
+  const supabase = await createSupabaseClient();
+  const estabelecimentoId = await getEstabelecimentoId();
+  if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
+
+  const { error } = await supabase.rpc("pagar_compromisso", {
+    p_estabelecimento_id: estabelecimentoId,
+    p_compromisso_id: parsed.data.compromissoId,
+    p_conta_id: parsed.data.contaId,
+    p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_descricao: parsed.data.descricao?.trim() || undefined,
+  });
+  return err(error);
+}
+
 // --- Fatura do cartão ---------------------------------------------------------
 
 export async function pagarFatura(input: {

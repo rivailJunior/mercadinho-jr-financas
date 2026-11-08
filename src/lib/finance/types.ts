@@ -11,6 +11,7 @@ export type CompromissoStatus =
   | "PENDENTE"
   | "PARCIALMENTE_RESERVADO"
   | "RESERVADO"
+  | "PARCIALMENTE_PAGO"
   | "PAGO"
   | "VENCIDO";
 

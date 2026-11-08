@@ -1,27 +1,42 @@
 "use client";
 
-import { aportarReserva, criarTransferencia, pagarFatura } from "@/app/actions/financeiro";
+import {
+  aportarReserva,
+  criarTransferencia,
+  pagarCompromisso,
+  pagarFatura,
+} from "@/app/actions/financeiro";
 import { CurrencyInput } from "@/components/currency-input";
 import { Toast, type ToastMessage } from "@/components/toast";
-import type { Conta, Fatura, Reserva } from "@/lib/finance";
+import type { Compromisso, Conta, Fatura, Reserva } from "@/lib/finance";
 import { formatCents, reaisToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { ArrowLeftRight, CheckCircle, ChevronDown, CreditCard, PiggyBank } from "lucide-react";
+import { ArrowLeftRight, CheckCircle, ChevronDown, PiggyBank, ReceiptText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-type Acao = "transferencia" | "reserva" | "fatura";
+type Acao = "transferencia" | "reserva" | "pagar";
 
 const ACOES: { id: Acao; label: string; icon: typeof ArrowLeftRight }[] = [
   { id: "transferencia", label: "Transferir", icon: ArrowLeftRight },
   { id: "reserva", label: "Reserva", icon: PiggyBank },
-  { id: "fatura", label: "Fatura", icon: CreditCard },
+  { id: "pagar", label: "Pagar conta", icon: ReceiptText },
 ];
+
+/** A payable obligation — a card invoice or a monthly fixed commitment. */
+interface Obrigacao {
+  key: string;
+  kind: "fatura" | "compromisso";
+  id: string;
+  label: string;
+  pendente: number;
+}
 
 interface FinancialActionsProps {
   contas: (Conta & { saldoAtual: number })[];
   reservas: Reserva[];
   faturas: Fatura[];
+  compromissos: Compromisso[];
 }
 
 const selectClass =
@@ -34,7 +49,12 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
-export const FinancialActions = ({ contas, reservas, faturas }: FinancialActionsProps) => {
+export const FinancialActions = ({
+  contas,
+  reservas,
+  faturas,
+  compromissos,
+}: FinancialActionsProps) => {
   const router = useRouter();
   const [acao, setAcao] = useState<Acao>("transferencia");
   const [open, setOpen] = useState(false);
@@ -47,7 +67,36 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
   const [destinoId, setDestinoId] = useState(contas[1]?.id ?? "");
   const [reservaId, setReservaId] = useState(reservas[0]?.id ?? "");
-  const [faturaId, setFaturaId] = useState(faturas[0]?.id ?? "");
+  const [obrigacaoKey, setObrigacaoKey] = useState("");
+
+  const obrigacoes = useMemo<Obrigacao[]>(() => {
+    const list: Obrigacao[] = [];
+    for (const f of faturas) {
+      if (f.status === "PAGA" || f.status === "VENCIDA") continue;
+      const pendente = (f.valorFechado ?? f.valorAtual) - f.valorPago;
+      if (pendente <= 0) continue;
+      list.push({
+        key: `fatura:${f.id}`,
+        kind: "fatura",
+        id: f.id,
+        label: `Fatura do cartão · vence ${f.vencimento} · falta ${formatCents(pendente)}`,
+        pendente,
+      });
+    }
+    for (const c of compromissos) {
+      if (c.status === "PAGO") continue;
+      const pendente = (c.valorEfetivo ?? c.valorPrevisto) - c.valorPago;
+      if (pendente <= 0) continue;
+      list.push({
+        key: `comp:${c.id}`,
+        kind: "compromisso",
+        id: c.id,
+        label: `${c.nome} · falta ${formatCents(pendente)}`,
+        pendente,
+      });
+    }
+    return list;
+  }, [faturas, compromissos]);
 
   const centavos = reaisToCents(valor);
 
@@ -95,15 +144,25 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
         "Guardado na reserva!",
       );
     } else {
-      if (!faturaId || !contaId)
+      const selecionada = obrigacoes.find((o) => o.key === obrigacaoKey);
+      if (!selecionada || !contaId)
         return setToast({
           id: Date.now(),
           variant: "error",
-          message: "Escolha a fatura e a conta.",
+          message: "Escolha a conta a pagar e a conta de origem.",
         });
       run(
-        () => pagarFatura({ faturaId, contaId, valorCentavos: centavos, descricao }),
-        "Fatura paga!",
+        selecionada.kind === "fatura"
+          ? () =>
+              pagarFatura({ faturaId: selecionada.id, contaId, valorCentavos: centavos, descricao })
+          : () =>
+              pagarCompromisso({
+                compromissoId: selecionada.id,
+                contaId,
+                valorCentavos: centavos,
+                descricao,
+              }),
+        "Pagamento registrado!",
       );
     }
   };
@@ -203,18 +262,18 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
               </Field>
             )}
 
-            {acao === "fatura" && (
+            {acao === "pagar" && (
               <>
-                <Field label="Fatura">
+                <Field label="O que está sendo pago?">
                   <select
-                    value={faturaId}
-                    onChange={(e) => setFaturaId(e.target.value)}
+                    value={obrigacaoKey}
+                    onChange={(e) => setObrigacaoKey(e.target.value)}
                     className={selectClass}
                   >
-                    {faturas.length === 0 && <option value="">Nenhuma fatura aberta</option>}
-                    {faturas.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        Vence {f.vencimento} · {f.status}
+                    <option value="">Escolha…</option>
+                    {obrigacoes.map((o) => (
+                      <option key={o.key} value={o.key}>
+                        {o.label}
                       </option>
                     ))}
                   </select>
@@ -233,7 +292,8 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
                   </select>
                 </Field>
                 <p className="text-[11px] text-slate-400">
-                  Pagar a fatura liquida a obrigação — não conta de novo como despesa.
+                  O pagamento baixa a obrigação e consome o que estiver guardado na reserva — não
+                  conta de novo como despesa.
                 </p>
               </>
             )}
