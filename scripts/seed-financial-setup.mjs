@@ -103,11 +103,17 @@ const RESERVAS = [
 ];
 
 // Compromissos mensais de referência (valores configuráveis, não dívida).
+// dia_vencimento: dia do mês em que a conta vence (null = último dia do mês).
 const COMPROMISSOS = [
-  { nome: "Pró-labore", valor_previsto_centavos: 200000, prioridade: 3 },
-  { nome: "Água", valor_previsto_centavos: 50000, prioridade: 4 },
-  { nome: "Energia elétrica", valor_previsto_centavos: 90000, prioridade: 4 },
-  { nome: "Funcionários", valor_previsto_centavos: 220000, prioridade: 5 },
+  { nome: "Pró-labore", valor_previsto_centavos: 200000, prioridade: 3, dia_vencimento: null },
+  { nome: "Água", valor_previsto_centavos: 50000, prioridade: 4, dia_vencimento: 6 },
+  {
+    nome: "Energia elétrica",
+    valor_previsto_centavos: 90000,
+    prioridade: 4,
+    dia_vencimento: 6,
+  },
+  { nome: "Funcionários", valor_previsto_centavos: 220000, prioridade: 5, dia_vencimento: null },
 ];
 
 const contas = [

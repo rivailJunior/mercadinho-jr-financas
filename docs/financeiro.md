@@ -71,6 +71,19 @@ A reserva do cartão **acumula entre ciclos**: pagar a fatura consome
 `valor_reservado_centavos` da fatura, mas o excedente fica na reserva para o
 próximo ciclo. Nada zera reserva no fim do mês.
 
+## Compromissos são ciclos mensais recorrentes
+
+Todo `compromisso` MENSAL é um template recorrente: `dia_vencimento`
+(1–31, `NULL` = último dia do mês) define a regra e `vencimento` guarda a
+data do ciclo aberto. Água/energia vencem dia 6; pró-labore, funcionários e
+reserva financeira, no fim do mês.
+
+Quando `pagar_compromisso` quita o ciclo, o próprio RPC **abre o próximo**
+(`vencimento = proximo_vencimento(...)`, `valor_pago = 0`, `status =
+PENDENTE`) — dinheiro provisionado dali em diante já financia a conta do
+mês seguinte, nunca uma obrigação quitada. Pagamento parcial fica
+`PARCIALMENTE_PAGO` no ciclo corrente.
+
 ## Fluxo diário unificado (caixa do dia → modelo financeiro)
 
 O formulário "Anotar Caixa do Dia" (home) é a única entrada diária. Cada
@@ -97,8 +110,9 @@ Roteamento de conta:
 
 1. `ritmoCartao = faltaCartao ÷ diasAteFechamento` — a fatura precisa estar
    provisionada até o **fechamento** do ciclo (campo informativo).
-2. `ritmoCompromissos = faltaCompromissos ÷ diasAteFimMes` — demais contas
-   vencem no fim do mês (campo informativo).
+2. `ritmoCompromissos = faltaCompromissos ÷ diasAteCompromissos` — o ritmo
+   usa o vencimento do compromisso pendente mais próximo (campo
+   informativo).
 3. `disponivel = max(0, lucroDia)` — o lucro líquido do dia (entradas −
    saídas) é o que pode ser dividido.
 4. `sugerido = min(85% do lucroDia, faltaTotal, saldoLivre)` — 85% do lucro

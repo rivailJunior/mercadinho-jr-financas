@@ -6,6 +6,7 @@ import {
   type PosicaoFinanceira,
   type ProvisaoResult,
   type Reserva,
+  derivarStatus,
   posicaoFinanceira,
   provisaoDiaria,
 } from "@/lib/finance";
@@ -142,17 +143,58 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     prioridade: r.prioridade,
   }));
 
-  const compromissos: Compromisso[] = (compromissosRows ?? []).map((c) => ({
-    id: c.id,
-    nome: c.nome,
-    valorPrevisto: c.valor_previsto_centavos,
-    valorEfetivo: c.valor_efetivo_centavos ?? undefined,
-    valorReservado: 0,
-    valorPago: c.valor_pago_centavos ?? 0,
-    vencimento: c.vencimento ?? "",
-    prioridade: c.prioridade,
-    status: c.status,
-  }));
+  // Each reserve's balance is spread across the commitments linked to it,
+  // in proportion to what each one still owes — so every item shows its own
+  // covered share instead of a flat "pendente" on everything.
+  type CompromissoRow = NonNullable<typeof compromissosRows>[number];
+  const reservaSaldo = new Map(reservas.map((r) => [r.id, r.valorAtual]));
+  const porReserva = new Map<string, CompromissoRow[]>();
+  for (const row of compromissosRows ?? []) {
+    if (row.status === "PAGO" || row.reserva_id == null) continue;
+    const list = porReserva.get(row.reserva_id) ?? [];
+    list.push(row);
+    porReserva.set(row.reserva_id, list);
+  }
+  const pendenteDe = (r: CompromissoRow) =>
+    Math.max(
+      0,
+      (r.valor_efetivo_centavos ?? r.valor_previsto_centavos) - (r.valor_pago_centavos ?? 0),
+    );
+  const reservadoPorCompromisso = new Map<string, Cents>();
+  for (const [reservaId, rows] of porReserva) {
+    const saldo = reservaSaldo.get(reservaId) ?? 0;
+    const totalPendente = rows.reduce((acc, r) => acc + pendenteDe(r), 0);
+    if (saldo <= 0 || totalPendente <= 0) continue;
+    let restante = saldo;
+    rows.forEach((r, i) => {
+      const pendente = pendenteDe(r);
+      const share =
+        i === rows.length - 1
+          ? Math.min(pendente, restante)
+          : Math.min(pendente, Math.floor((saldo * pendente) / totalPendente));
+      restante -= share;
+      reservadoPorCompromisso.set(r.id, share);
+    });
+  }
+
+  const hoje = todayISODate();
+  const fimMes = monthBounds(hoje.slice(0, 7)).end;
+  const compromissos: Compromisso[] = (compromissosRows ?? []).map((c) => {
+    const base: Compromisso = {
+      id: c.id,
+      nome: c.nome,
+      valorPrevisto: c.valor_previsto_centavos,
+      valorEfetivo: c.valor_efetivo_centavos ?? undefined,
+      valorReservado: reservadoPorCompromisso.get(c.id) ?? 0,
+      valorPago: c.valor_pago_centavos ?? 0,
+      // Monthly bills without a concrete due date are paid at month-end —
+      // a null vencimento must never read as an already-past date.
+      vencimento: c.vencimento ?? fimMes,
+      prioridade: c.prioridade,
+      status: c.status,
+    };
+    return { ...base, status: derivarStatus(base, hoje) };
+  });
 
   const faturas: Fatura[] = (faturasRows ?? []).map((f) => {
     // Open cycles have no closed amount yet — the running total is the sum of
@@ -211,7 +253,7 @@ export interface ProvisaoPainel {
   /** Today's provision already ran — no second aporte today. */
   jaGuardouHoje: boolean;
   diasAteFatura: number;
-  diasAteFimMes: number;
+  diasAteCompromissos: number;
   reservaCartaoId: string | null;
   reservaCompromissosId: string | null;
   resultado: ProvisaoResult;
@@ -314,13 +356,20 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
   // Provision against the closing date (fechamento), not the due date: the
   // family wants the invoice fully funded by the time the cycle closes.
   const diasAteFatura = faturaAberta ? Math.max(1, daysBetween(hoje, faturaAberta.fechamento)) : 1;
-  const diasAteFimMes = Math.max(1, daysBetween(hoje, fimMes));
+  // Commitments have their own due dates (água/energia on the 6th, the rest
+  // at month-end) — the bucket paces itself to the nearest unpaid one.
+  const alvoCompromissos =
+    painel.compromissos
+      .filter((c) => c.status !== "PAGO")
+      .map((c) => c.vencimento)
+      .sort()[0] ?? fimMes;
+  const diasAteCompromissos = Math.max(1, daysBetween(hoje, alvoCompromissos));
 
   const resultado = provisaoDiaria({
     faltaCartao,
     diasAteFatura,
     faltaCompromissos,
-    diasAteFimMes,
+    diasAteCompromissos,
     lucroDia,
     jaGuardouHoje,
     saldoLivre: painel.posicao.saldoLivre,
@@ -337,7 +386,7 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
     lucroDia,
     jaGuardouHoje,
     diasAteFatura,
-    diasAteFimMes,
+    diasAteCompromissos,
     reservaCartaoId: reservaCartao?.id ?? null,
     reservaCompromissosId:
       reservaCompromissosIds.size === 1 ? [...reservaCompromissosIds][0] : null,

@@ -7,8 +7,8 @@ export interface ProvisaoInput {
   diasAteFatura: number;
   /** faltaCompromissos = Σ monthly fixed bills − what their reserve already holds. */
   faltaCompromissos: Cents;
-  /** Days until the end of the month (clamped to ≥ 1). */
-  diasAteFimMes: number;
+  /** Days until the nearest unpaid commitment's due date (clamped to ≥ 1). */
+  diasAteCompromissos: number;
   /** Today's net profit (entradas − saídas) — the source of today's earmark. */
   lucroDia: Cents;
   /** True once today's provision was already executed — the button stays inactive. */
@@ -53,7 +53,7 @@ const pace = (falta: Cents, dias: number): Cents =>
  */
 export const provisaoDiaria = (input: ProvisaoInput): ProvisaoResult => {
   const ritmoCartao = pace(input.faltaCartao, input.diasAteFatura);
-  const ritmoCompromissos = pace(input.faltaCompromissos, input.diasAteFimMes);
+  const ritmoCompromissos = pace(input.faltaCompromissos, input.diasAteCompromissos);
   const ritmoTotal = ritmoCartao + ritmoCompromissos;
   const disponivel = Math.max(0, assertCents(input.lucroDia));
   const sugerido = input.jaGuardouHoje

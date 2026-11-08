@@ -5,7 +5,7 @@ describe("provisaoDiaria — quanto guardar hoje pras contas fixas", () => {
     faltaCartao: 150_000,
     diasAteFatura: 12,
     faltaCompromissos: 330_000,
-    diasAteFimMes: 22,
+    diasAteCompromissos: 22,
     lucroDia: 56_000,
     jaGuardouHoje: false,
     saldoLivre: 500_000,
@@ -68,7 +68,7 @@ describe("provisaoDiaria — quanto guardar hoje pras contas fixas", () => {
   });
 
   it("prazo vencido é tratado como 1 dia (nunca divide por zero)", () => {
-    const r = provisaoDiaria({ ...base, diasAteFatura: 0, diasAteFimMes: -3 });
+    const r = provisaoDiaria({ ...base, diasAteFatura: 0, diasAteCompromissos: -3 });
     expect(r.ritmoCartao).toBe(150_000);
     expect(r.ritmoCompromissos).toBe(330_000);
   });

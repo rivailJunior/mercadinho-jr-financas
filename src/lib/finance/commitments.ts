@@ -32,9 +32,10 @@ export const faltaPagar = (c: Compromisso): Cents => clampNonNegative(valorAlvo(
 export const derivarStatus = (c: Compromisso, hoje: string): CompromissoStatus => {
   const alvo = valorAlvo(c);
   if (alvo > 0 && c.valorPago >= alvo) return "PAGO";
-  if (c.vencimento < hoje) return "VENCIDO";
+  if (c.vencimento && c.vencimento < hoje) return "VENCIDO";
   const coberto = c.valorReservado + c.valorPago;
   if (coberto >= alvo && alvo > 0) return "RESERVADO";
+  if (c.valorPago > 0) return "PARCIALMENTE_PAGO";
   if (coberto > 0) return "PARCIALMENTE_RESERVADO";
   return "PENDENTE";
 };

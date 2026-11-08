@@ -171,7 +171,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             >
               Contas fixas do mês
             </h3>
-            <p className="text-xs text-slate-500">Pagas no último dia do mês.</p>
+            <p className="text-xs text-slate-500">Cada conta tem seu dia de vencimento.</p>
           </div>
         </div>
         <ul className="space-y-3 border-t border-slate-100 pt-3">
@@ -191,9 +191,19 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                   </span>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between text-[11px]">
-                  <span className={`font-bold ${st.accent}`}>{st.label}</span>
+                  <span className={`font-bold ${st.accent}`}>
+                    {st.label}
+                    {c.vencimento && (
+                      <span className="ml-1 font-normal text-slate-400">
+                        · vence {c.vencimento.slice(8, 10)}/{c.vencimento.slice(5, 7)}
+                      </span>
+                    )}
+                  </span>
                   {falta > 0 ? (
-                    <span className="text-slate-400">Falta {formatCents(falta)}</span>
+                    <span className="text-slate-400">
+                      {c.valorReservado > 0 && `${formatCents(c.valorReservado)} reservado · `}
+                      Falta {formatCents(falta)}
+                    </span>
                   ) : (
                     <span className="text-emerald-600">Coberto</span>
                   )}
