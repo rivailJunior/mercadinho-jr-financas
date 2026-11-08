@@ -98,7 +98,9 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       .maybeSingle(),
     supabase
       .from("movimentacoes_reservas")
-      .select("id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras(nome)")
+      .select(
+        "id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras!movimentacoes_reservas_reserva_id_fkey(nome)",
+      )
       .eq("estabelecimento_id", estabelecimentoId)
       .order("created_at", { ascending: false })
       .limit(20),
