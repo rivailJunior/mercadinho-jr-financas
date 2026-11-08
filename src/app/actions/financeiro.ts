@@ -194,6 +194,21 @@ export async function guardarParaFixas(): Promise<SaveResult> {
   return { ok: true };
 }
 
+// --- Desfazer aporte em reserva ------------------------------------------------
+
+export async function desfazerAporteReserva(input: {
+  movimentacaoId: string;
+}): Promise<SaveResult> {
+  const parsed = z.object({ movimentacaoId: uuidSchema }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Movimento inválido." };
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.rpc("desfazer_aporte_reserva", {
+    p_movimentacao_id: parsed.data.movimentacaoId,
+  });
+  return err(error);
+}
+
 // --- Compromissos (contas fixas) ----------------------------------------------
 
 export async function pagarCompromisso(input: {

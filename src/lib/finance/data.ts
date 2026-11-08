@@ -14,6 +14,15 @@ import {
 import type { Cents } from "@/lib/money";
 import { createSupabaseClient } from "@/lib/supabase/client";
 
+export interface MovimentoReserva {
+  id: string;
+  tipo: "APORTE" | "RETIRADA" | "TRANSFERENCIA" | string;
+  valor: Cents;
+  dataReferencia: string;
+  descricao: string | null;
+  reservaNome: string;
+}
+
 export interface PainelFinanceiro {
   posicao: PosicaoFinanceira;
   contas: (Conta & { saldoAtual: Cents })[];
@@ -22,6 +31,7 @@ export interface PainelFinanceiro {
   faturas: Fatura[];
   caixaMinimo: Cents;
   recomendacao: Recomendacao;
+  movimentosReserva: MovimentoReserva[];
 }
 
 /** Resolves the default establishment id (single-store app). */
@@ -54,6 +64,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     { data: compromissosRows },
     { data: faturasRows },
     { data: configRow },
+    { data: movReservaRows },
   ] = await Promise.all([
     supabase
       .from("v_saldos_contas")
@@ -85,6 +96,12 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       .order("id", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("movimentacoes_reservas")
+      .select("id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras(nome)")
+      .eq("estabelecimento_id", estabelecimentoId)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   // v_saldos_contas already derives each account's current balance
@@ -186,6 +203,15 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     alvos,
   });
 
+  const movimentosReserva: MovimentoReserva[] = (movReservaRows ?? []).map((m) => ({
+    id: m.id,
+    tipo: m.tipo,
+    valor: m.valor_centavos,
+    dataReferencia: m.data_referencia,
+    descricao: m.descricao,
+    reservaNome: (m.reservas_financeiras as { nome?: string } | null)?.nome ?? "Reserva",
+  }));
+
   return {
     posicao,
     contas,
@@ -194,6 +220,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     faturas,
     caixaMinimo,
     recomendacao,
+    movimentosReserva,
   };
 };
 

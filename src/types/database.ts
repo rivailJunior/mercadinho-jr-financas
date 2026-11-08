@@ -862,6 +862,10 @@ export type Database = {
         };
         Returns: string;
       };
+      desfazer_aporte_reserva: {
+        Args: { p_movimentacao_id: string };
+        Returns: undefined;
+      };
       pagar_compromisso: {
         Args: {
           p_compromisso_id: string;

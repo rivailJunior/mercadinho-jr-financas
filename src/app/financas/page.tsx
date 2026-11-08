@@ -1,4 +1,10 @@
-import { BottomNav, FinancialActions, FinancialDashboard, GreetingHeader } from "@/components";
+import {
+  BottomNav,
+  FinancialActions,
+  FinancialDashboard,
+  GreetingHeader,
+  ReserveMovementsCard,
+} from "@/components";
 import { getPainelFinanceiro } from "@/lib/finance/data";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +26,7 @@ export default async function FinancasPage() {
               faturas={painel.faturas}
               compromissos={painel.compromissos}
             />
+            <ReserveMovementsCard movimentos={painel.movimentosReserva} />
           </>
         ) : (
           <p className="rounded-3xl border border-slate-100 bg-white p-5 text-sm text-slate-500 shadow-soft">
