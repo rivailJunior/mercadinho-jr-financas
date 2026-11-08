@@ -6,8 +6,9 @@ describe("provisaoDiaria — quanto guardar hoje pras contas fixas", () => {
     diasAteFatura: 12,
     faltaCompromissos: 330_000,
     diasAteFimMes: 22,
+    lucroDia: 56_000,
+    jaGuardouHoje: false,
     saldoLivre: 500_000,
-    caixaMinimo: 250_000,
   };
 
   it("ritmo = falta ÷ dias restantes, por bucket", () => {
@@ -17,39 +18,51 @@ describe("provisaoDiaria — quanto guardar hoje pras contas fixas", () => {
     expect(r.ritmoTotal).toBe(27_500);
   });
 
-  it("sugestão = ritmo total quando há disponível", () => {
+  it("guarda 85% do lucro do dia e deixa 15% no caixa", () => {
     const r = provisaoDiaria(base);
-    // disponível = 5000 - 2500 = 2500 > ritmo 275
-    expect(r.disponivel).toBe(250_000);
-    expect(r.sugerido).toBe(27_500);
-    expect(r.sugeridoCartao).toBe(12_500);
-    expect(r.sugeridoCompromissos).toBe(15_000);
-  });
-
-  it("suaviza quando o acumulado está adiantado (falta pequena → ritmo pequeno)", () => {
-    const r = provisaoDiaria({ ...base, faltaCartao: 3_000, faltaCompromissos: 4_400 });
-    // já quase tudo acumulado: ritmos ficam centavos de reais
-    expect(r.ritmoCartao).toBe(250);
-    expect(r.ritmoCompromissos).toBe(200);
-    expect(r.sugerido).toBe(450);
-  });
-
-  it("limita pela disponibilidade e prioriza o cartão (vencimento mais próximo)", () => {
-    const r = provisaoDiaria({ ...base, saldoLivre: 260_000 });
-    // disponível = 2600 - 2500 = 100 < ritmoTotal 275
-    expect(r.disponivel).toBe(10_000);
-    expect(r.sugerido).toBe(10_000);
-    expect(r.sugeridoCartao).toBe(10_000); // tudo pro cartão
+    // 560 × 85% = 476 pras fixas; 84 ficam no caixa
+    expect(r.disponivel).toBe(56_000);
+    expect(r.sugerido).toBe(47_600);
+    expect(r.sugeridoCartao).toBe(47_600); // cartão primeiro
     expect(r.sugeridoCompromissos).toBe(0);
+    expect(r.sobraCaixa).toBe(8_400);
   });
 
-  it("recomenda R$ 0 quando o livre está abaixo do caixa mínimo", () => {
-    const r = provisaoDiaria({ ...base, saldoLivre: 200_000 });
-    expect(r.disponivel).toBe(0);
+  it("transborda pras outras contas quando o cartão está quase coberto", () => {
+    const r = provisaoDiaria({ ...base, faltaCartao: 20_000 });
+    expect(r.sugerido).toBe(47_600);
+    expect(r.sugeridoCartao).toBe(20_000);
+    expect(r.sugeridoCompromissos).toBe(27_600);
+  });
+
+  it("limita pela falta total — o excedente fica no caixa", () => {
+    const r = provisaoDiaria({ ...base, faltaCartao: 10_000, faltaCompromissos: 20_000 });
+    expect(r.sugerido).toBe(30_000); // 85% de 560 = 476, mas só faltam 300
+    expect(r.sobraCaixa).toBe(26_000);
+  });
+
+  it("limita pelo saldo livre — nunca reserva dinheiro que não existe", () => {
+    const r = provisaoDiaria({ ...base, saldoLivre: 30_000 });
+    expect(r.sugerido).toBe(30_000);
+    expect(r.sobraCaixa).toBe(26_000);
+  });
+
+  it("sugere R$ 0 quando o dia não teve sobra", () => {
+    for (const lucroDia of [0, -15_000]) {
+      const r = provisaoDiaria({ ...base, lucroDia });
+      expect(r.disponivel).toBe(0);
+      expect(r.sugerido).toBe(0);
+      expect(r.sobraCaixa).toBe(0);
+    }
+  });
+
+  it("bloqueia quando o aporte do dia já foi feito", () => {
+    const r = provisaoDiaria({ ...base, jaGuardouHoje: true });
     expect(r.sugerido).toBe(0);
+    expect(r.sobraCaixa).toBe(56_000); // lucro segue no caixa
   });
 
-  it("recomenda R$ 0 quando nada falta", () => {
+  it("sugere R$ 0 quando nada falta", () => {
     const r = provisaoDiaria({ ...base, faltaCartao: 0, faltaCompromissos: 0 });
     expect(r.sugerido).toBe(0);
   });

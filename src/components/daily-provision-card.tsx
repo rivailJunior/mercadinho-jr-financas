@@ -65,7 +65,7 @@ export const DailyProvisionCard = ({ provisao }: DailyProvisionCardProps) => {
         <Line label="Falta pro cartão" value={formatCents(provisao.faltaCartao)} />
         <Line label="Falta pras outras contas" value={formatCents(provisao.faltaCompromissos)} />
         <Line label="Ritmo necessário por dia" value={formatCents(r.ritmoTotal)} />
-        <Line label="Disponível pra guardar" value={formatCents(r.disponivel)} />
+        <Line label="Livre de verdade hoje" value={formatCents(r.disponivel)} />
       </div>
 
       <button
@@ -78,9 +78,11 @@ export const DailyProvisionCard = ({ provisao }: DailyProvisionCardProps) => {
         {isSaving ? "Guardando..." : `Guardar ${formatCents(r.sugerido)} hoje`}
       </button>
       <p className="mt-2 text-center text-[11px] text-slate-400">
-        {r.sugerido > 0
-          ? `${formatCents(r.sugeridoCartao)} pro cartão · ${formatCents(r.sugeridoCompromissos)} pras outras contas`
-          : "Nada a guardar hoje — caixa mínimo preservado."}
+        {provisao.jaGuardouHoje
+          ? "Você já guardou hoje — amanhã tem mais."
+          : r.sugerido > 0
+            ? `${formatCents(r.sugeridoCartao)} pro cartão · ${formatCents(r.sugeridoCompromissos)} pras outras contas · ${formatCents(r.sobraCaixa)} fica no caixa`
+            : "Sem sobra hoje — nada a guardar."}
       </p>
     </section>
   );

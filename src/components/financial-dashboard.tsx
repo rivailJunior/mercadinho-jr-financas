@@ -111,16 +111,20 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             <li className="py-1 text-xs text-slate-500">Nenhuma reserva configurada.</li>
           )}
           {reservas.map((r) => {
-            const falta = r.meta != null ? Math.max(0, r.meta - r.valorAtual) : null;
-            const progresso = r.meta && r.meta > 0 ? Math.min(1, r.valorAtual / r.meta) : null;
+            const falta = r.metaEfetiva != null ? Math.max(0, r.metaEfetiva - r.valorAtual) : null;
+            const progresso =
+              r.metaEfetiva && r.metaEfetiva > 0 ? Math.min(1, r.valorAtual / r.metaEfetiva) : null;
             return (
               <li key={r.id} className="text-xs">
                 <div className="flex items-center justify-between py-0.5">
                   <span className="font-medium text-slate-600">{r.nome}</span>
                   <span className="tabular-nums font-bold text-slate-800">
                     {formatCents(r.valorAtual)}
-                    {r.meta != null && (
-                      <span className="font-normal text-slate-400"> / {formatCents(r.meta)}</span>
+                    {r.metaEfetiva != null && (
+                      <span className="font-normal text-slate-400">
+                        {" "}
+                        / {formatCents(r.metaEfetiva)}
+                      </span>
                     )}
                   </span>
                 </div>

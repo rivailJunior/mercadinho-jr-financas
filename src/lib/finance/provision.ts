@@ -9,10 +9,12 @@ export interface ProvisaoInput {
   faltaCompromissos: Cents;
   /** Days until the end of the month (clamped to ≥ 1). */
   diasAteFimMes: number;
-  /** Consolidated − reserved: money not yet destined to anything. */
+  /** Today's net profit (entradas − saídas) — the source of today's earmark. */
+  lucroDia: Cents;
+  /** True once today's provision was already executed — the button stays inactive. */
+  jaGuardouHoje: boolean;
+  /** Consolidated − reserved: absolute ceiling for any earmark. */
   saldoLivre: Cents;
-  /** Liquidity that must always remain in the drawer. */
-  caixaMinimo: Cents;
 }
 
 export interface ProvisaoResult {
@@ -21,34 +23,50 @@ export interface ProvisaoResult {
   /** faltaCompromissos ÷ diasAteFimMes — daily pace needed for the other bills. */
   ritmoCompromissos: Cents;
   ritmoTotal: Cents;
-  /** max(0, saldoLivre − caixaMinimo): what can actually be earmarked today. */
+  /** max(0, lucroDia): the day's profit available to split. */
   disponivel: Cents;
-  /** min(ritmoTotal, disponivel): how much to set aside today. */
+  /** 85% of the day's profit into fixed bills; 0 when negative or already saved. */
   sugerido: Cents;
   /** Card bucket first (nearest deadline), compromissos get the remainder. */
   sugeridoCartao: Cents;
   sugeridoCompromissos: Cents;
+  /** What stays in the drawer — the 15% share plus any cap overflow. */
+  sobraCaixa: Cents;
 }
+
+/** Fixed bills keep 85% of the day's profit; the remaining 15% stays as free cash. */
+const PCT_FIXAS = 0.85;
 
 const pace = (falta: Cents, dias: number): Cents =>
   falta <= 0 ? 0 : Math.floor(assertCents(falta) / Math.max(1, Math.floor(dias)));
 
 /**
- * "Quanto guardar hoje pras contas fixas" — a smoothed daily provision.
+ * "Quanto guardar hoje pras contas fixas" — driven by the day's profit.
  *
- * Each bucket (card invoice; other monthly bills) has its own deadline, so
- * the required pace is falta ÷ diasRestantes. The suggestion is capped by
- * the money actually available after keeping the operational minimum, and
- * the card — the nearest obligation — is funded first. When accumulation is
- * already on track, the pace (and thus the suggestion) naturally shrinks.
+ * When the net result of the day (entradas − saídas) is positive, 85% of it
+ * is earmarked to the fixed-bill envelopes (card first, nearest deadline)
+ * and 15% stays in the drawer as free cash. The suggestion is capped by
+ * the total remaining gap and by the money that is actually free, and it
+ * runs once per day — after today's aporte the suggestion goes to zero.
+ * The ritmo fields remain informational: they show the pace needed to
+ * cover each gap by its deadline.
  */
 export const provisaoDiaria = (input: ProvisaoInput): ProvisaoResult => {
   const ritmoCartao = pace(input.faltaCartao, input.diasAteFatura);
   const ritmoCompromissos = pace(input.faltaCompromissos, input.diasAteFimMes);
   const ritmoTotal = ritmoCartao + ritmoCompromissos;
-  const disponivel = Math.max(0, assertCents(input.saldoLivre) - assertCents(input.caixaMinimo));
-  const sugerido = Math.min(ritmoTotal, disponivel);
-  const sugeridoCartao = Math.min(ritmoCartao, sugerido);
+  const disponivel = Math.max(0, assertCents(input.lucroDia));
+  const sugerido = input.jaGuardouHoje
+    ? 0
+    : Math.max(
+        0,
+        Math.min(
+          Math.floor(disponivel * PCT_FIXAS),
+          input.faltaCartao + input.faltaCompromissos,
+          assertCents(input.saldoLivre),
+        ),
+      );
+  const sugeridoCartao = Math.min(sugerido, input.faltaCartao);
   return {
     ritmoCartao,
     ritmoCompromissos,
@@ -57,5 +75,6 @@ export const provisaoDiaria = (input: ProvisaoInput): ProvisaoResult => {
     sugerido,
     sugeridoCartao,
     sugeridoCompromissos: sugerido - sugeridoCartao,
+    sobraCaixa: disponivel - sugerido,
   };
 };
