@@ -1,7 +1,7 @@
 "use server";
 
 import { todayISODate } from "@/lib/dates";
-import type { ContaTipo, MovimentoTipo } from "@/lib/finance";
+import type { ContaTipo } from "@/lib/finance";
 import { getEstabelecimentoId, getProvisaoDiaria } from "@/lib/finance/data";
 import { assertCents } from "@/lib/money";
 import { createSupabaseClient } from "@/lib/supabase/client";
@@ -45,41 +45,6 @@ export async function criarConta(input: {
     tipo: parsed.data.tipo,
     saldo_inicial_centavos: assertCents(parsed.data.saldoInicialCentavos),
     data_saldo_inicial: parsed.data.dataSaldoInicial ?? todayISODate(),
-  });
-  return err(error);
-}
-
-// --- Movimentações operacionais ----------------------------------------------
-
-export async function registrarMovimento(input: {
-  contaId: string;
-  tipo: MovimentoTipo;
-  valorCentavos: number;
-  descricao?: string;
-  dataReferencia?: string;
-}): Promise<SaveResult> {
-  const schema = z.object({
-    contaId: uuidSchema,
-    tipo: z.enum(["ENTRADA", "SAIDA"]),
-    valorCentavos: centsSchema,
-    descricao: z.string().optional(),
-    dataReferencia: z.string().optional(),
-  });
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Dados de movimentação inválidos." };
-
-  const supabase = await createSupabaseClient();
-  const estabelecimentoId = await getEstabelecimentoId();
-  if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
-
-  const { error } = await supabase.from("movimentacoes_financeiras").insert({
-    estabelecimento_id: estabelecimentoId,
-    conta_id: parsed.data.contaId,
-    tipo: parsed.data.tipo,
-    natureza: "OPERACIONAL",
-    valor_centavos: assertCents(parsed.data.valorCentavos),
-    data_referencia: parsed.data.dataReferencia ?? todayISODate(),
-    descricao: parsed.data.descricao?.trim() || null,
   });
   return err(error);
 }

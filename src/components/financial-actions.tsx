@@ -1,31 +1,18 @@
 "use client";
 
-import {
-  aportarReserva,
-  criarTransferencia,
-  pagarFatura,
-  registrarMovimento,
-} from "@/app/actions/financeiro";
+import { aportarReserva, criarTransferencia, pagarFatura } from "@/app/actions/financeiro";
 import { CurrencyInput } from "@/components/currency-input";
 import { Toast, type ToastMessage } from "@/components/toast";
 import type { Conta, Fatura, Reserva } from "@/lib/finance";
 import { formatCents, reaisToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import {
-  ArrowLeftRight,
-  CheckCircle,
-  ChevronDown,
-  CreditCard,
-  PiggyBank,
-  Receipt,
-} from "lucide-react";
+import { ArrowLeftRight, CheckCircle, ChevronDown, CreditCard, PiggyBank } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-type Acao = "movimento" | "transferencia" | "reserva" | "fatura";
+type Acao = "transferencia" | "reserva" | "fatura";
 
-const ACOES: { id: Acao; label: string; icon: typeof Receipt }[] = [
-  { id: "movimento", label: "Movimento", icon: Receipt },
+const ACOES: { id: Acao; label: string; icon: typeof ArrowLeftRight }[] = [
   { id: "transferencia", label: "Transferir", icon: ArrowLeftRight },
   { id: "reserva", label: "Reserva", icon: PiggyBank },
   { id: "fatura", label: "Fatura", icon: CreditCard },
@@ -49,7 +36,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 
 export const FinancialActions = ({ contas, reservas, faturas }: FinancialActionsProps) => {
   const router = useRouter();
-  const [acao, setAcao] = useState<Acao>("movimento");
+  const [acao, setAcao] = useState<Acao>("transferencia");
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<(ToastMessage & { id: number }) | null>(null);
@@ -58,7 +45,6 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
   const [valor, setValor] = useState(0); // reais
   const [descricao, setDescricao] = useState("");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
-  const [tipo, setTipo] = useState<"ENTRADA" | "SAIDA">("ENTRADA");
   const [destinoId, setDestinoId] = useState(contas[1]?.id ?? "");
   const [reservaId, setReservaId] = useState(reservas[0]?.id ?? "");
   const [faturaId, setFaturaId] = useState(faturas[0]?.id ?? "");
@@ -90,14 +76,7 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
       setToast({ id: Date.now(), variant: "error", message: "Informe um valor maior que zero." });
       return;
     }
-    if (acao === "movimento") {
-      if (!contaId)
-        return setToast({ id: Date.now(), variant: "error", message: "Escolha a conta." });
-      run(
-        () => registrarMovimento({ contaId, tipo, valorCentavos: centavos, descricao }),
-        tipo === "ENTRADA" ? "Entrada registrada!" : "Saída registrada!",
-      );
-    } else if (acao === "transferencia") {
+    if (acao === "transferencia") {
       run(
         () =>
           criarTransferencia({
@@ -153,7 +132,7 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
 
       {open && (
         <>
-          <div className="mb-4 grid grid-cols-4 gap-1.5 rounded-2xl bg-slate-100 p-1">
+          <div className="mb-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
             {ACOES.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -174,48 +153,6 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
           </div>
 
           <div className="space-y-4">
-            {acao === "movimento" && (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTipo("ENTRADA")}
-                    className={cn(
-                      "rounded-xl px-3 py-2.5 text-xs font-bold",
-                      tipo === "ENTRADA"
-                        ? "bg-emerald-500 text-white"
-                        : "bg-slate-100 text-slate-500",
-                    )}
-                  >
-                    Entrada (+)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTipo("SAIDA")}
-                    className={cn(
-                      "rounded-xl px-3 py-2.5 text-xs font-bold",
-                      tipo === "SAIDA" ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-500",
-                    )}
-                  >
-                    Saída (-)
-                  </button>
-                </div>
-                <Field label="Conta">
-                  <select
-                    value={contaId}
-                    onChange={(e) => setContaId(e.target.value)}
-                    className={selectClass}
-                  >
-                    {contas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome} · {formatCents(c.saldoAtual)}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </>
-            )}
-
             {acao === "transferencia" && (
               <>
                 <Field label="De (origem)">
