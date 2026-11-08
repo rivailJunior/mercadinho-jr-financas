@@ -7,6 +7,7 @@ import {
   pagarFatura,
 } from "@/app/actions/financeiro";
 import { CurrencyInput } from "@/components/currency-input";
+import { SelectField } from "@/components/select-field";
 import { Toast, type ToastMessage } from "@/components/toast";
 import type { Compromisso, Conta, Fatura, Reserva } from "@/lib/finance";
 import { formatCents, reaisToCents } from "@/lib/money";
@@ -38,9 +39,6 @@ interface FinancialActionsProps {
   faturas: Fatura[];
   compromissos: Compromisso[];
 }
-
-const selectClass =
-  "w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white";
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="space-y-1.5">
@@ -215,30 +213,26 @@ export const FinancialActions = ({
             {acao === "transferencia" && (
               <>
                 <Field label="De (origem)">
-                  <select
+                  <SelectField
                     value={contaId}
-                    onChange={(e) => setContaId(e.target.value)}
-                    className={selectClass}
-                  >
-                    {contas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome} · {formatCents(c.saldoAtual)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setContaId}
+                    ariaLabel="Conta de origem"
+                    options={contas.map((c) => ({
+                      value: c.id,
+                      label: `${c.nome} · ${formatCents(c.saldoAtual)}`,
+                    }))}
+                  />
                 </Field>
                 <Field label="Para (destino)">
-                  <select
+                  <SelectField
                     value={destinoId}
-                    onChange={(e) => setDestinoId(e.target.value)}
-                    className={selectClass}
-                  >
-                    {contas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome} · {formatCents(c.saldoAtual)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setDestinoId}
+                    ariaLabel="Conta de destino"
+                    options={contas.map((c) => ({
+                      value: c.id,
+                      label: `${c.nome} · ${formatCents(c.saldoAtual)}`,
+                    }))}
+                  />
                 </Field>
                 <p className="text-[11px] text-slate-400">
                   Transferência não muda o saldo consolidado — só move o dinheiro de lugar.
@@ -248,48 +242,39 @@ export const FinancialActions = ({
 
             {acao === "reserva" && (
               <Field label="Reserva">
-                <select
+                <SelectField
                   value={reservaId}
-                  onChange={(e) => setReservaId(e.target.value)}
-                  className={selectClass}
-                >
-                  {reservas.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nome} · {formatCents(r.valorAtual)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setReservaId}
+                  ariaLabel="Reserva"
+                  options={reservas.map((r) => ({
+                    value: r.id,
+                    label: `${r.nome} · ${formatCents(r.valorAtual)}`,
+                  }))}
+                />
               </Field>
             )}
 
             {acao === "pagar" && (
               <>
                 <Field label="O que está sendo pago?">
-                  <select
+                  <SelectField
                     value={obrigacaoKey}
-                    onChange={(e) => setObrigacaoKey(e.target.value)}
-                    className={selectClass}
-                  >
-                    <option value="">Escolha…</option>
-                    {obrigacoes.map((o) => (
-                      <option key={o.key} value={o.key}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setObrigacaoKey}
+                    ariaLabel="Obrigação a pagar"
+                    placeholder="Escolha…"
+                    options={obrigacoes.map((o) => ({ value: o.key, label: o.label }))}
+                  />
                 </Field>
                 <Field label="Pagar a partir de">
-                  <select
+                  <SelectField
                     value={contaId}
-                    onChange={(e) => setContaId(e.target.value)}
-                    className={selectClass}
-                  >
-                    {contas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome} · {formatCents(c.saldoAtual)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setContaId}
+                    ariaLabel="Conta de origem do pagamento"
+                    options={contas.map((c) => ({
+                      value: c.id,
+                      label: `${c.nome} · ${formatCents(c.saldoAtual)}`,
+                    }))}
+                  />
                 </Field>
                 <p className="text-[11px] text-slate-400">
                   O pagamento baixa a obrigação e consome o que estiver guardado na reserva — não

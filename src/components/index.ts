@@ -20,6 +20,7 @@ export { TransactionItem } from "./transaction-item";
 export { DeleteLancamentoModal } from "./delete-lancamento-modal";
 export { RelatorioScreen } from "./relatorio-screen";
 export { FinancialDashboard } from "./financial-dashboard";
+export { SelectField } from "./select-field";
 export { FinancialActions } from "./financial-actions";
 export { DailyProvisionCard } from "./daily-provision-card";
 export { LogoutButton } from "./logout-button";
