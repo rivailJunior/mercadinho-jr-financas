@@ -1,6 +1,6 @@
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
-import { AlertTriangle, PiggyBank, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, PiggyBank, TrendingUp, Wallet } from "lucide-react";
 
 interface FinancialDashboardProps {
   painel: PainelFinanceiro;
@@ -15,8 +15,17 @@ const Stat = ({ label, value, accent }: { label: string; value: number; accent: 
   </article>
 );
 
+const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
+  PENDENTE: { label: "Pendente", accent: "text-slate-400" },
+  PARCIALMENTE_RESERVADO: { label: "Reservando", accent: "text-indigo-500" },
+  RESERVADO: { label: "Reservado", accent: "text-indigo-600" },
+  PARCIALMENTE_PAGO: { label: "Parcial", accent: "text-amber-600" },
+  PAGO: { label: "Pago", accent: "text-emerald-600" },
+  VENCIDO: { label: "Vencido", accent: "text-rose-600" },
+};
+
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, caixaMinimo, recomendacao } = painel;
+  const { posicao, contas, reservas, compromissos, caixaMinimo, recomendacao } = painel;
   const livre = posicao.saldoLivre;
   const abaixoDoMinimo = recomendacao.abaixoDoMinimo;
 
@@ -128,6 +137,55 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                     Falta {formatCents(falta)}
                   </span>
                 )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* Contas fixas do mês */}
+      <section
+        aria-labelledby="compromissos-title"
+        className="rounded-3xl border border-slate-100 bg-white p-5 shadow-soft"
+      >
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+            <CalendarClock className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h3
+              id="compromissos-title"
+              className="text-sm font-extrabold leading-snug text-slate-800"
+            >
+              Contas fixas do mês
+            </h3>
+            <p className="text-xs text-slate-500">Pagas no último dia do mês.</p>
+          </div>
+        </div>
+        <ul className="space-y-3 border-t border-slate-100 pt-3">
+          {compromissos.length === 0 && (
+            <li className="py-1 text-xs text-slate-500">Nenhuma conta fixa cadastrada.</li>
+          )}
+          {compromissos.map((c) => {
+            const total = c.valorEfetivo ?? c.valorPrevisto;
+            const falta = Math.max(0, total - c.valorReservado - c.valorPago);
+            const st = STATUS_COMPROMISSO[c.status] ?? STATUS_COMPROMISSO.PENDENTE;
+            return (
+              <li key={c.id} className="text-xs">
+                <div className="flex items-center justify-between py-0.5">
+                  <span className="font-medium text-slate-600">{c.nome}</span>
+                  <span className="tabular-nums font-bold text-slate-800">
+                    {formatCents(total)}
+                  </span>
+                </div>
+                <div className="mt-0.5 flex items-center justify-between text-[11px]">
+                  <span className={`font-bold ${st.accent}`}>{st.label}</span>
+                  {falta > 0 ? (
+                    <span className="text-slate-400">Falta {formatCents(falta)}</span>
+                  ) : (
+                    <span className="text-emerald-600">Coberto</span>
+                  )}
+                </div>
               </li>
             );
           })}
