@@ -1,0 +1,7 @@
+# Supabase project configuration.
+# Link with: supabase link --project-ref vizyhhyugnufyijtwmyj
+project_id = "vizyhhyugnufyijtwmyj"
+
+[db]
+# Keep in sync with the remote Postgres major version (PG17).
+major_version = 17
