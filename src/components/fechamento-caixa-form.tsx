@@ -18,11 +18,11 @@ interface FechamentoCaixaFormProps {
 export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: FechamentoCaixaFormProps) => {
   const router = useRouter();
   const [cashEntry, setCashEntry] = useState<CashEntry>({
-    dinheiroGaveta: initialEntrada,
+    dinheiroGaveta: 0,
     cartao: 0,
     pix: 0,
   });
-  const [expenseValue, setExpenseValue] = useState(initialSaida);
+  const [expenseValue, setExpenseValue] = useState(0);
   const [expenseDescription, setExpenseDescription] = useState("");
   const [entradaConta, setEntradaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
   const [saidaConta, setSaidaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
@@ -83,15 +83,17 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
   }, [expenseValue, expenseDescription, saidaConta, router]);
 
   const summary: DailySummary = useMemo(() => {
-    const totalEntradas = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
-    const sobraLimpa = totalEntradas - expenseValue;
+    const totalEntradas =
+      initialEntrada + cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
+    const totalSaidas = initialSaida + expenseValue;
+    const sobraLimpa = totalEntradas - totalSaidas;
 
     return {
       totalEntradas,
-      totalSaidas: expenseValue,
+      totalSaidas,
       sobraLimpa: Math.round(sobraLimpa * 100) / 100,
     };
-  }, [cashEntry, expenseValue]);
+  }, [initialEntrada, initialSaida, cashEntry, expenseValue]);
 
   return (
     <>
