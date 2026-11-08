@@ -20,9 +20,9 @@ const Line = ({ label, value }: { label: string; value: string }) => (
 );
 
 /**
- * "Quanto guardar hoje pras contas fixas" — shows the smoothed daily
- * provision (falta ÷ dias restantes, capped by free cash after the
- * operational minimum) and applies it with one tap.
+ * "Quanto guardar hoje pras contas fixas" — shows the daily provision
+ * (85% of the day's profit, capped by the remaining gaps) and applies it
+ * with one tap.
  */
 export const DailyProvisionCard = ({ provisao }: DailyProvisionCardProps) => {
   const router = useRouter();

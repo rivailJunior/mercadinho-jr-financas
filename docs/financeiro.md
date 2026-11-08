@@ -71,23 +71,6 @@ A reserva do cartão **acumula entre ciclos**: pagar a fatura consome
 `valor_reservado_centavos` da fatura, mas o excedente fica na reserva para o
 próximo ciclo. Nada zera reserva no fim do mês.
 
-## Caixa mínimo operacional
-
-`config_financeira.caixa_minimo_centavos` (atual: R$ 2.500) é a liquidez que
-deve sempre sobrar. O algoritmo de alocação nunca recomenda destinar dinheiro
-que derrubaria o caixa abaixo do mínimo.
-
-## Algoritmo de alocação dinâmica
-
-`recomendarAlocacao` (função pura em `src/lib/finance/allocation.ts`):
-
-1. `disponivel = consolidado − reservado − caixaMinimo` (floor em 0).
-2. Ordena alvos por prioridade; desempata por vencimento mais próximo.
-3. Distribui o disponível sequencialmente até cobrir cada `falta`
-   (falta = previsto/efetivo − reservado − pago, sem subtrair em dobro).
-4. **Recomenda, nunca executa** — a confirmação é sempre do usuário.
-5. Caixa abaixo do mínimo ou dia sem sobra → recomenda R$ 0.
-
 ## Fluxo diário unificado (caixa do dia → modelo financeiro)
 
 O formulário "Anotar Caixa do Dia" (home) é a única entrada diária. Cada
@@ -113,12 +96,14 @@ Roteamento de conta:
 `getProvisaoDiaria` em `data.ts` e exibida no card da home:
 
 1. `ritmoCartao = faltaCartao ÷ diasAteFechamento` — a fatura precisa estar
-   provisionada até o **fechamento** do ciclo.
+   provisionada até o **fechamento** do ciclo (campo informativo).
 2. `ritmoCompromissos = faltaCompromissos ÷ diasAteFimMes` — demais contas
-   vencem no fim do mês.
-3. `disponivel = max(0, saldoLivre − caixaMinimo)`.
-4. `sugerido = min(ritmoTotal, disponivel)` — suavizado: se o acumulado já
-   está adiantado, o ritmo (e a sugestão) caem naturalmente.
+   vencem no fim do mês (campo informativo).
+3. `disponivel = max(0, lucroDia)` — o lucro líquido do dia (entradas −
+   saídas) é o que pode ser dividido.
+4. `sugerido = min(85% do lucroDia, faltaTotal, saldoLivre)` — 85% do lucro
+   do dia vai pras contas fixas; 15% fica no caixa. Zerado quando o dia já
+   teve aporte (`jaGuardouHoje`).
 5. O cartão recebe primeiro (vencimento mais próximo); o restante vai para
    a reserva dos demais compromissos.
 

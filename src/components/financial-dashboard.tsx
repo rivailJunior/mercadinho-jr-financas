@@ -1,6 +1,6 @@
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
-import { AlertTriangle, CalendarClock, PiggyBank, TrendingUp, Wallet } from "lucide-react";
+import { CalendarClock, PiggyBank, Wallet } from "lucide-react";
 
 interface FinancialDashboardProps {
   painel: PainelFinanceiro;
@@ -25,9 +25,8 @@ const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
 };
 
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, compromissos, caixaMinimo, recomendacao } = painel;
+  const { posicao, contas, reservas, compromissos } = painel;
   const livre = posicao.saldoLivre;
-  const abaixoDoMinimo = recomendacao.abaixoDoMinimo;
 
   return (
     <div className="space-y-6">
@@ -53,14 +52,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             value={livre}
             accent={livre >= 0 ? "text-emerald-600" : "text-rose-600"}
           />
-          <Stat label="Caixa mínimo" value={caixaMinimo} accent="text-slate-500" />
         </div>
-        {abaixoDoMinimo && (
-          <p className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
-            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-            Caixa abaixo do mínimo operacional — não recomende novas reservas hoje.
-          </p>
-        )}
       </section>
 
       {/* Onde o dinheiro está */}
@@ -194,55 +186,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             );
           })}
         </ul>
-      </section>
-
-      {/* Recomendação de alocação */}
-      <section
-        aria-labelledby="recomendacao-title"
-        className="rounded-3xl border border-slate-100 bg-white p-5 shadow-soft"
-      >
-        <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-            <TrendingUp className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h3
-              id="recomendacao-title"
-              className="text-sm font-extrabold leading-snug text-slate-800"
-            >
-              Alocação recomendada hoje
-            </h3>
-            <p className="text-xs text-slate-500">Dinâmica — não é uma retirada fixa.</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 p-3">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-            Pode reservar
-          </span>
-          <span className="tabular-nums text-xl font-black text-emerald-700">
-            {formatCents(recomendacao.totalRecomendado)}
-          </span>
-        </div>
-        {recomendacao.totalRecomendado > 0 && (
-          <ul className="mt-3 space-y-2 border-t border-slate-100 pt-3">
-            {recomendacao.itens
-              .filter((i) => i.recomendado > 0)
-              .map((i) => (
-                <li key={i.id} className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-600">{i.nome}</span>
-                  <span className="tabular-nums font-bold text-emerald-600">
-                    {formatCents(i.recomendado)}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        )}
-        <p className="mt-3 border-t border-slate-100 pt-3 text-[11px] text-slate-400">
-          Manter disponível no caixa:{" "}
-          <span className="font-bold text-slate-600">
-            {formatCents(recomendacao.manterDisponivel)}
-          </span>
-        </p>
       </section>
     </div>
   );

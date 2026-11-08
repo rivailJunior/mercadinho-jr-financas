@@ -5,11 +5,9 @@ import {
   type Fatura,
   type PosicaoFinanceira,
   type ProvisaoResult,
-  type Recomendacao,
   type Reserva,
   posicaoFinanceira,
   provisaoDiaria,
-  recomendarAlocacao,
 } from "@/lib/finance";
 import type { Cents } from "@/lib/money";
 import { createSupabaseClient } from "@/lib/supabase/client";
@@ -29,8 +27,6 @@ export interface PainelFinanceiro {
   reservas: (Reserva & { metaEfetiva: Cents | null })[];
   compromissos: Compromisso[];
   faturas: Fatura[];
-  caixaMinimo: Cents;
-  recomendacao: Recomendacao;
   movimentosReserva: MovimentoReserva[];
 }
 
@@ -47,8 +43,7 @@ export const getEstabelecimentoId = async (): Promise<string | null> => {
 };
 
 /**
- * Loads the real financial position for the default establishment and runs the
- * dynamic allocation recommendation on top of it.
+ * Loads the real financial position for the default establishment.
  *
  * Money is read in integer cents (bigint) straight from the new v2 tables —
  * no float arithmetic anywhere.
@@ -63,7 +58,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     { data: reservasRows },
     { data: compromissosRows },
     { data: faturasRows },
-    { data: configRow },
     { data: movReservaRows },
   ] = await Promise.all([
     supabase
@@ -89,13 +83,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       )
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
-    supabase
-      .from("config_financeira")
-      .select("caixa_minimo_centavos")
-      .eq("estabelecimento_id", estabelecimentoId)
-      .order("id", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
     supabase
       .from("movimentacoes_reservas")
       .select(
@@ -186,46 +173,9 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     };
   });
 
-  const caixaMinimo = configRow?.caixa_minimo_centavos ?? 0;
-
   // The consolidated balance comes straight from the derived view; pass an
   // empty movements list so we don't double-count them on top of saldo_atual.
   const posicao = posicaoFinanceira(contas, [], reservas);
-
-  const alvos = [
-    ...compromissos.map((c) => ({
-      id: c.id,
-      nome: c.nome,
-      falta: Math.max(0, (c.valorEfetivo ?? c.valorPrevisto) - c.valorReservado - c.valorPago),
-      vencimento: c.vencimento,
-      prioridade: c.prioridade,
-    })),
-    ...faturas.map((f) => ({
-      id: f.id,
-      nome: `Fatura ${f.vencimento}`,
-      falta: Math.max(0, (f.valorFechado ?? f.valorAtual) - f.valorReservado),
-      vencimento: f.vencimento,
-      prioridade: 1,
-    })),
-    ...reservas
-      .filter((r) => r.meta != null)
-      .map((r) => ({
-        id: r.id,
-        nome: r.nome,
-        falta: Math.max(0, (r.meta ?? 0) - r.valorAtual),
-        vencimento: undefined as string | undefined,
-        prioridade: r.prioridade,
-      })),
-  ]
-    .sort((a, b) => a.prioridade - b.prioridade)
-    .map(({ id, nome, falta, vencimento }) => ({ id, nome, falta, vencimento }));
-
-  const recomendacao = recomendarAlocacao({
-    saldoConsolidado: posicao.saldoConsolidado,
-    totalReservado: posicao.totalReservado,
-    caixaMinimo,
-    alvos,
-  });
 
   const movimentosReserva: MovimentoReserva[] = (movReservaRows ?? []).map((m) => ({
     id: m.id,
@@ -242,8 +192,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     reservas,
     compromissos,
     faturas,
-    caixaMinimo,
-    recomendacao,
     movimentosReserva,
   };
 };
@@ -258,7 +206,6 @@ export interface ProvisaoPainel {
   reservadoCompromissos: Cents;
   faltaCompromissos: Cents;
   saldoLivre: Cents;
-  caixaMinimo: Cents;
   /** Today's net profit (entradas − saídas), in cents. */
   lucroDia: Cents;
   /** Today's provision already ran — no second aporte today. */
@@ -277,10 +224,9 @@ const daysBetween = (fromIso: string, toIso: string): number =>
   );
 
 /**
- * Computes the smoothed daily provision: each bucket (card invoice; other
- * monthly bills) needs falta ÷ diasRestantes, capped by the free cash that
- * remains after the operational minimum. The card bucket is funded first
- * because its deadline is nearest.
+ * Computes the daily provision: each bucket (card invoice; other monthly
+ * bills) needs falta ÷ diasRestantes, capped by the day's profit. The card
+ * bucket is funded first because its deadline is nearest.
  */
 export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
   const painel = await getPainelFinanceiro();
@@ -388,7 +334,6 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
     reservadoCompromissos,
     faltaCompromissos,
     saldoLivre: painel.posicao.saldoLivre,
-    caixaMinimo: painel.caixaMinimo,
     lucroDia,
     jaGuardouHoje,
     diasAteFatura,

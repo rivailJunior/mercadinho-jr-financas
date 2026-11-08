@@ -8,7 +8,6 @@ import {
   faltaReservarFatura,
   pagarFatura,
   posicaoFinanceira,
-  recomendarAlocacao,
   saldoConsolidado,
   saldoConta,
   transferenciaParaMovimentos,
@@ -106,38 +105,6 @@ describe("Cenário E — transferência interna", () => {
     expect(saldoConta(contas[0], movs)).toBe(R(2000));
     expect(saldoConta(contas[1], movs)).toBe(R(3000));
     expect(saldoConsolidado(contas, movs)).toBe(R(5000));
-  });
-});
-
-describe("Cenário F — dia de baixa receita", () => {
-  test("caixa abaixo do mínimo operacional não recomenda alocação", () => {
-    const rec = recomendarAlocacao({
-      saldoConsolidado: R(1500),
-      totalReservado: 0,
-      caixaMinimo: R(2500),
-      alvos: [{ id: "cartao", nome: "Cartão", falta: R(5000) }],
-    });
-    expect(rec.abaixoDoMinimo).toBe(true);
-    expect(rec.totalRecomendado).toBe(0);
-  });
-});
-
-describe("Cenário G — dia de receita elevada", () => {
-  test("recomenda alocação dinâmica por prioridade até esgotar o disponível", () => {
-    const rec = recomendarAlocacao({
-      saldoConsolidado: R(20000),
-      totalReservado: R(12213),
-      caixaMinimo: R(2500),
-      alvos: [
-        { id: "cartao", nome: "Cartão", falta: R(10000) },
-        { id: "emergencia", nome: "Emergência", falta: R(3000) },
-      ],
-    });
-    // disponível = 20000 - 12213 - 2500 = 5287
-    expect(rec.totalRecomendado).toBe(R(5287));
-    expect(rec.itens[0].recomendado).toBe(R(5287)); // tudo vai para a maior prioridade
-    expect(rec.itens[1].recomendado).toBe(0);
-    expect(rec.abaixoDaMeta.length).toBe(2);
   });
 });
 
