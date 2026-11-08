@@ -24,10 +24,16 @@ as $$
   );
 $$;
 
--- Due day per commitment: água/energia on the 6th; everything else month-end.
+-- Due day per commitment: energia on the 6th, água on the 24th; everything
+-- else defaults to month-end.
 update public.compromissos_financeiros
 set dia_vencimento = 6
-where nome ~* '(á|a)gua|energia|luz'
+where nome ~* 'energia|luz'
+  and dia_vencimento is null;
+
+update public.compromissos_financeiros
+set dia_vencimento = 24
+where nome ~* '(á|a)gua'
   and dia_vencimento is null;
 
 -- Commitments still missing a due date get this month's one — which may

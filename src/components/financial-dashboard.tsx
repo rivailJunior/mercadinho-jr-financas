@@ -190,14 +190,17 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                     {formatCents(total)}
                   </span>
                 </div>
+                <div>
+                  {c.vencimento && (
+                    <span className="font-normal text-slate-400">
+                      vence {c.vencimento.slice(8, 10)}/{c.vencimento.slice(5, 7)}
+                    </span>
+                  )}
+                </div>
                 <div className="mt-0.5 flex items-center justify-between text-[11px]">
                   <span className={`font-bold ${st.accent}`}>
                     {st.label}
-                    {c.vencimento && (
-                      <span className="ml-1 font-normal text-slate-400">
-                        · vence {c.vencimento.slice(8, 10)}/{c.vencimento.slice(5, 7)}
-                      </span>
-                    )}
+
                   </span>
                   {falta > 0 ? (
                     <span className="text-slate-400">
@@ -208,6 +211,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                     <span className="text-emerald-600">Coberto</span>
                   )}
                 </div>
+
               </li>
             );
           })}

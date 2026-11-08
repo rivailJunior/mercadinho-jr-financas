@@ -75,8 +75,8 @@ próximo ciclo. Nada zera reserva no fim do mês.
 
 Todo `compromisso` MENSAL é um template recorrente: `dia_vencimento`
 (1–31, `NULL` = último dia do mês) define a regra e `vencimento` guarda a
-data do ciclo aberto. Água/energia vencem dia 6; pró-labore, funcionários e
-reserva financeira, no fim do mês.
+data do ciclo aberto. Energia vence dia 6, água dia 24; pró-labore,
+funcionários e reserva financeira, no fim do mês.
 
 Quando `pagar_compromisso` quita o ciclo, o próprio RPC **abre o próximo**
 (`vencimento = proximo_vencimento(...)`, `valor_pago = 0`, `status =
