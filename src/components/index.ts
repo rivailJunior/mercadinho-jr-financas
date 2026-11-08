@@ -4,7 +4,6 @@ export { CurrencyInput } from "./currency-input";
 export { CashEntryCard } from "./cash-entry-card";
 export { DailySummaryCard } from "./daily-summary-card";
 export { YearlySummaryCard } from "./yearly-summary-card";
-export { FixedExpenseReserve } from "./fixed-expense-reserve";
 export { WeeklyChart } from "./weekly-chart";
 export { YearlyChart } from "./yearly-chart";
 export { WhatsAppHelpLink } from "./whatsapp-help-link";

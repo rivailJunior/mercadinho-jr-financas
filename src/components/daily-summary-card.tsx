@@ -41,26 +41,18 @@ export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
           barColor="bg-rose-300/40"
           shadowClass="shadow-card-coral"
         />
-        <SummaryCardItem
-          label="Guardar p/ Contas"
-          value={summary.reservaDiaria}
-          subtitle="Separar na gaveta"
-          bgColor="bg-brand-mint"
-          labelColor="text-emerald-100"
-          subtitleColor="text-emerald-100"
-          barColor="bg-emerald-300/40"
-          shadowClass="shadow-card-mint"
-        />
-        <SummaryCardItem
-          label="Livre de Verdade"
-          value={summary.sobraLimpa}
-          subtitle="Lucro limpo do dia"
-          bgColor="bg-brand-deep-purple"
-          labelColor="text-indigo-100"
-          subtitleColor="text-indigo-200"
-          barColor="bg-indigo-300/40"
-          shadowClass="shadow-card-purple"
-        />
+        <div className="col-span-2">
+          <SummaryCardItem
+            label="Livre de Verdade"
+            value={summary.sobraLimpa}
+            subtitle="Lucro limpo do dia"
+            bgColor="bg-brand-deep-purple"
+            labelColor="text-indigo-100"
+            subtitleColor="text-indigo-200"
+            barColor="bg-indigo-300/40"
+            shadowClass="shadow-card-purple"
+          />
+        </div>
       </div>
     </section>
   );

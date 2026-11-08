@@ -13,14 +13,9 @@ import { useCallback, useMemo, useState } from "react";
 interface FechamentoCaixaFormProps {
   initialEntrada: number;
   initialSaida: number;
-  reservaDiaria: number;
 }
 
-export const FechamentoCaixaForm = ({
-  initialEntrada,
-  initialSaida,
-  reservaDiaria,
-}: FechamentoCaixaFormProps) => {
+export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: FechamentoCaixaFormProps) => {
   const router = useRouter();
   const [cashEntry, setCashEntry] = useState<CashEntry>({
     dinheiroGaveta: initialEntrada,
@@ -89,15 +84,14 @@ export const FechamentoCaixaForm = ({
 
   const summary: DailySummary = useMemo(() => {
     const totalEntradas = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
-    const sobraLimpa = totalEntradas - expenseValue - reservaDiaria;
+    const sobraLimpa = totalEntradas - expenseValue;
 
     return {
       totalEntradas,
       totalSaidas: expenseValue,
-      reservaDiaria: Math.round(reservaDiaria * 100) / 100,
       sobraLimpa: Math.round(sobraLimpa * 100) / 100,
     };
-  }, [cashEntry, expenseValue, reservaDiaria]);
+  }, [cashEntry, expenseValue]);
 
   return (
     <>
