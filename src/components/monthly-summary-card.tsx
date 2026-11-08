@@ -1,6 +1,6 @@
 import { SummaryCardItem } from "@/components/summary-card-item";
 import type { MonthlyReportSummary } from "@/types/cashClosing";
-import { PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface MonthlySummaryCardProps {
   summary: MonthlyReportSummary;
@@ -40,28 +40,6 @@ export const MonthlySummaryCard = ({ summary }: MonthlySummaryCardProps) => {
           barColor="bg-rose-300/40"
           shadowClass="shadow-card-coral"
           icon={TrendingDown}
-        />
-        <SummaryCardItem
-          label="Guardar p/ Contas"
-          value={summary.totalReserva}
-          subtitle="Reserva mensal fixa"
-          bgColor="bg-brand-mint"
-          labelColor="text-emerald-100"
-          subtitleColor="text-emerald-100"
-          barColor="bg-emerald-300/40"
-          shadowClass="shadow-card-mint"
-          icon={PiggyBank}
-        />
-        <SummaryCardItem
-          label="Livre de Verdade"
-          value={summary.livreDeVerdade}
-          subtitle="Lucro líquido real"
-          bgColor="bg-brand-deep-purple"
-          labelColor="text-indigo-100"
-          subtitleColor="text-indigo-200"
-          barColor="bg-indigo-300/40"
-          shadowClass="shadow-card-purple"
-          icon={Wallet}
         />
       </div>
     </section>
