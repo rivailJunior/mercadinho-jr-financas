@@ -11,7 +11,14 @@ import { Toast, type ToastMessage } from "@/components/toast";
 import type { Conta, Fatura, Reserva } from "@/lib/finance";
 import { formatCents, reaisToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { ArrowLeftRight, CheckCircle, CreditCard, PiggyBank, Receipt } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CheckCircle,
+  ChevronDown,
+  CreditCard,
+  PiggyBank,
+  Receipt,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
@@ -43,6 +50,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 export const FinancialActions = ({ contas, reservas, faturas }: FinancialActionsProps) => {
   const router = useRouter();
   const [acao, setAcao] = useState<Acao>("movimento");
+  const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<(ToastMessage & { id: number }) | null>(null);
 
@@ -128,181 +136,198 @@ export const FinancialActions = ({ contas, reservas, faturas }: FinancialActions
     >
       {toast && <Toast key={toast.id} toast={toast} onDismiss={() => setToast(null)} />}
 
-      <div className="mb-4 flex items-center justify-between">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn("flex w-full items-center justify-between", open && "mb-4")}
+      >
         <h2 id="acoes-title" className="text-base font-bold text-slate-700">
           Ações financeiras
         </h2>
-      </div>
+        <span className="flex items-center gap-1 text-xs font-bold text-indigo-600">
+          {open ? "Fechar" : "Registrar operação"}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        </span>
+      </button>
 
-      <div className="mb-4 grid grid-cols-4 gap-1.5 rounded-2xl bg-slate-100 p-1">
-        {ACOES.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setAcao(id)}
-            className={cn(
-              "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold transition-all",
-              acao === id ? "bg-white font-extrabold text-indigo-600 shadow-sm" : "text-slate-500",
+      {open && (
+        <>
+          <div className="mb-4 grid grid-cols-4 gap-1.5 rounded-2xl bg-slate-100 p-1">
+            {ACOES.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setAcao(id)}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold transition-all",
+                  acao === id
+                    ? "bg-white font-extrabold text-indigo-600 shadow-sm"
+                    : "text-slate-500",
+                )}
+                aria-pressed={acao === id}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            {acao === "movimento" && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTipo("ENTRADA")}
+                    className={cn(
+                      "rounded-xl px-3 py-2.5 text-xs font-bold",
+                      tipo === "ENTRADA"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-100 text-slate-500",
+                    )}
+                  >
+                    Entrada (+)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTipo("SAIDA")}
+                    className={cn(
+                      "rounded-xl px-3 py-2.5 text-xs font-bold",
+                      tipo === "SAIDA" ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-500",
+                    )}
+                  >
+                    Saída (-)
+                  </button>
+                </div>
+                <Field label="Conta">
+                  <select
+                    value={contaId}
+                    onChange={(e) => setContaId(e.target.value)}
+                    className={selectClass}
+                  >
+                    {contas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome} · {formatCents(c.saldoAtual)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </>
             )}
-            aria-pressed={acao === id}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </button>
-        ))}
-      </div>
 
-      <div className="space-y-4">
-        {acao === "movimento" && (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setTipo("ENTRADA")}
-                className={cn(
-                  "rounded-xl px-3 py-2.5 text-xs font-bold",
-                  tipo === "ENTRADA" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500",
-                )}
-              >
-                Entrada (+)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipo("SAIDA")}
-                className={cn(
-                  "rounded-xl px-3 py-2.5 text-xs font-bold",
-                  tipo === "SAIDA" ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-500",
-                )}
-              >
-                Saída (-)
-              </button>
+            {acao === "transferencia" && (
+              <>
+                <Field label="De (origem)">
+                  <select
+                    value={contaId}
+                    onChange={(e) => setContaId(e.target.value)}
+                    className={selectClass}
+                  >
+                    {contas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome} · {formatCents(c.saldoAtual)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Para (destino)">
+                  <select
+                    value={destinoId}
+                    onChange={(e) => setDestinoId(e.target.value)}
+                    className={selectClass}
+                  >
+                    {contas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome} · {formatCents(c.saldoAtual)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <p className="text-[11px] text-slate-400">
+                  Transferência não muda o saldo consolidado — só move o dinheiro de lugar.
+                </p>
+              </>
+            )}
+
+            {acao === "reserva" && (
+              <Field label="Reserva">
+                <select
+                  value={reservaId}
+                  onChange={(e) => setReservaId(e.target.value)}
+                  className={selectClass}
+                >
+                  {reservas.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nome} · {formatCents(r.valorAtual)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
+            {acao === "fatura" && (
+              <>
+                <Field label="Fatura">
+                  <select
+                    value={faturaId}
+                    onChange={(e) => setFaturaId(e.target.value)}
+                    className={selectClass}
+                  >
+                    {faturas.length === 0 && <option value="">Nenhuma fatura aberta</option>}
+                    {faturas.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        Vence {f.vencimento} · {f.status}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Pagar a partir de">
+                  <select
+                    value={contaId}
+                    onChange={(e) => setContaId(e.target.value)}
+                    className={selectClass}
+                  >
+                    {contas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome} · {formatCents(c.saldoAtual)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <p className="text-[11px] text-slate-400">
+                  Pagar a fatura liquida a obrigação — não conta de novo como despesa.
+                </p>
+              </>
+            )}
+
+            <CurrencyInput id="valor-acao" label="Valor" value={valor} onChange={setValor} />
+
+            <div className="space-y-1.5">
+              <span className="block text-xs font-bold uppercase tracking-wide text-slate-600">
+                Descrição (opcional)
+              </span>
+              <input
+                type="text"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Ex: venda do dia, depósito, pagamento"
+                className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white"
+              />
             </div>
-            <Field label="Conta">
-              <select
-                value={contaId}
-                onChange={(e) => setContaId(e.target.value)}
-                className={selectClass}
-              >
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome} · {formatCents(c.saldoAtual)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </>
-        )}
 
-        {acao === "transferencia" && (
-          <>
-            <Field label="De (origem)">
-              <select
-                value={contaId}
-                onChange={(e) => setContaId(e.target.value)}
-                className={selectClass}
-              >
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome} · {formatCents(c.saldoAtual)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Para (destino)">
-              <select
-                value={destinoId}
-                onChange={(e) => setDestinoId(e.target.value)}
-                className={selectClass}
-              >
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome} · {formatCents(c.saldoAtual)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <p className="text-[11px] text-slate-400">
-              Transferência não muda o saldo consolidado — só move o dinheiro de lugar.
-            </p>
-          </>
-        )}
-
-        {acao === "reserva" && (
-          <Field label="Reserva">
-            <select
-              value={reservaId}
-              onChange={(e) => setReservaId(e.target.value)}
-              className={selectClass}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-500 to-violet-500 px-6 py-4 text-base font-extrabold text-white shadow-button-tap transition-all duration-150 hover:from-indigo-600 hover:to-violet-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {reservas.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.nome} · {formatCents(r.valorAtual)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-
-        {acao === "fatura" && (
-          <>
-            <Field label="Fatura">
-              <select
-                value={faturaId}
-                onChange={(e) => setFaturaId(e.target.value)}
-                className={selectClass}
-              >
-                {faturas.length === 0 && <option value="">Nenhuma fatura aberta</option>}
-                {faturas.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    Vence {f.vencimento} · {f.status}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Pagar a partir de">
-              <select
-                value={contaId}
-                onChange={(e) => setContaId(e.target.value)}
-                className={selectClass}
-              >
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome} · {formatCents(c.saldoAtual)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <p className="text-[11px] text-slate-400">
-              Pagar a fatura liquida a obrigação — não conta de novo como despesa.
-            </p>
-          </>
-        )}
-
-        <CurrencyInput id="valor-acao" label="Valor" value={valor} onChange={setValor} />
-
-        <div className="space-y-1.5">
-          <span className="block text-xs font-bold uppercase tracking-wide text-slate-600">
-            Descrição (opcional)
-          </span>
-          <input
-            type="text"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Ex: venda do dia, depósito, pagamento"
-            className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isSaving}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-500 to-violet-500 px-6 py-4 text-base font-extrabold text-white shadow-button-tap transition-all duration-150 hover:from-indigo-600 hover:to-violet-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <CheckCircle className="h-5 w-5" />
-          {isSaving ? "Salvando..." : "Confirmar"}
-        </button>
-      </div>
+              <CheckCircle className="h-5 w-5" />
+              {isSaving ? "Salvando..." : "Confirmar"}
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 };

@@ -2,7 +2,7 @@
 
 import { todayISODate } from "@/lib/dates";
 import type { ContaTipo, MovimentoTipo } from "@/lib/finance";
-import { getEstabelecimentoId } from "@/lib/finance/data";
+import { getEstabelecimentoId, getProvisaoDiaria } from "@/lib/finance/data";
 import { assertCents } from "@/lib/money";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { z } from "zod";
@@ -186,6 +186,47 @@ export async function transferirReservas(input: {
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
+}
+
+// --- Provisão diária ("quanto guardar hoje") ----------------------------------
+
+/**
+ * Executes today's suggestion: earmarks the recommended amount into the card
+ * reserve and the other-bills reserve, in the split computed by
+ * getProvisaoDiaria. Runs entirely server-side so the rules stay in one place.
+ */
+export async function guardarParaFixas(): Promise<SaveResult> {
+  const provisao = await getProvisaoDiaria();
+  if (!provisao) return { ok: false, error: "Posição financeira indisponível." };
+
+  const { sugeridoCartao, sugeridoCompromissos, sugerido } = provisao.resultado;
+  if (sugerido <= 0) return { ok: false, error: "Nada a guardar hoje." };
+
+  const supabase = await createSupabaseClient();
+  const estabelecimentoId = await getEstabelecimentoId();
+  if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
+
+  const aportes: { reservaId: string | null; valor: number; nome: string }[] = [
+    { reservaId: provisao.reservaCartaoId, valor: sugeridoCartao, nome: "fatura" },
+    {
+      reservaId: provisao.reservaCompromissosId,
+      valor: sugeridoCompromissos,
+      nome: "demais contas",
+    },
+  ];
+
+  for (const a of aportes) {
+    if (a.valor <= 0) continue;
+    if (!a.reservaId) return { ok: false, error: `Reserva de ${a.nome} não encontrada.` };
+    const { error } = await supabase.rpc("aportar_reserva", {
+      p_estabelecimento_id: estabelecimentoId,
+      p_reserva_id: a.reservaId,
+      p_valor_centavos: a.valor,
+      p_descricao: "Provisão diária (contas fixas)",
+    });
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 // --- Fatura do cartão ---------------------------------------------------------

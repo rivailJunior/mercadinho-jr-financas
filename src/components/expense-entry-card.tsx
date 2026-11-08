@@ -1,20 +1,17 @@
 "use client";
 
-import { useCallback } from "react";
-import { ArrowDownCircle, Plus, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { CurrencyInput } from "@/components/currency-input";
+import { cn } from "@/lib/utils";
 import type { ExpenseEntry } from "@/types/cashClosing";
+import { ArrowDownCircle, Plus, Trash2 } from "lucide-react";
+import { useCallback } from "react";
 
 interface ExpenseEntryCardProps {
   expenses: ExpenseEntry[];
   onChange: (expenses: ExpenseEntry[]) => void;
 }
 
-export const ExpenseEntryCard = ({
-  expenses,
-  onChange,
-}: ExpenseEntryCardProps) => {
+export const ExpenseEntryCard = ({ expenses, onChange }: ExpenseEntryCardProps) => {
   const handleAddExpense = useCallback(() => {
     const newExpense: ExpenseEntry = {
       id: crypto.randomUUID(),
@@ -55,10 +52,7 @@ export const ExpenseEntryCard = ({
     >
       <div className="flex items-center gap-(--space-sm)">
         <div className="flex h-10 w-10 items-center justify-center rounded-(--rounded-md) bg-red-50">
-          <ArrowDownCircle
-            className="h-5 w-5 text-red-700"
-            aria-hidden="true"
-          />
+          <ArrowDownCircle className="h-5 w-5 text-red-700" aria-hidden="true" />
         </div>
         <div>
           <h2
@@ -68,8 +62,7 @@ export const ExpenseEntryCard = ({
             Saídas do Dia
           </h2>
           <p className="text-[14px] leading-5 text-slate-500">
-            Pagou fornecedor no balcão, reposição de verduras ou pãozinho? Anote
-            aqui!
+            Pagou fornecedor no balcão, reposição de verduras ou pãozinho? Anote aqui!
           </p>
         </div>
       </div>
@@ -95,9 +88,7 @@ export const ExpenseEntryCard = ({
                 id={`expense-desc-${expense.id}`}
                 type="text"
                 value={expense.descricao}
-                onChange={(e) =>
-                  handleDescriptionChange(expense.id, e.target.value)
-                }
+                onChange={(e) => handleDescriptionChange(expense.id, e.target.value)}
                 placeholder={`Saída ${index + 1}`}
                 className={cn(
                   "w-full rounded-(--rounded-md) border border-slate-200 bg-white",

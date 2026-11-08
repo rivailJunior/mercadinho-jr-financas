@@ -52,7 +52,6 @@ export const TransactionItem = ({ lancamento, onDelete }: TransactionItemProps) 
             </span>
           </div>
           <div className="mt-1">
-
             <span
               className={cn(
                 "tabular-nums whitespace-nowrap text-sm font-extrabold",

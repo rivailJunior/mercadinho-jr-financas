@@ -1,11 +1,14 @@
+import { monthBounds, todayISODate } from "@/lib/dates";
 import {
   type Compromisso,
   type Conta,
   type Fatura,
   type PosicaoFinanceira,
+  type ProvisaoResult,
   type Recomendacao,
   type Reserva,
   posicaoFinanceira,
+  provisaoDiaria,
   recomendarAlocacao,
 } from "@/lib/finance";
 import type { Cents } from "@/lib/money";
@@ -191,5 +194,117 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     faturas,
     caixaMinimo,
     recomendacao,
+  };
+};
+
+// --- Provisão diária ("quanto guardar hoje pras contas fixas") ----------------
+
+export interface ProvisaoPainel {
+  esperadoCartao: Cents;
+  reservadoCartao: Cents;
+  faltaCartao: Cents;
+  totalCompromissos: Cents;
+  reservadoCompromissos: Cents;
+  faltaCompromissos: Cents;
+  saldoLivre: Cents;
+  caixaMinimo: Cents;
+  diasAteFatura: number;
+  diasAteFimMes: number;
+  reservaCartaoId: string | null;
+  reservaCompromissosId: string | null;
+  resultado: ProvisaoResult;
+}
+
+const daysBetween = (fromIso: string, toIso: string): number =>
+  Math.round(
+    (new Date(`${toIso}T12:00:00Z`).getTime() - new Date(`${fromIso}T12:00:00Z`).getTime()) /
+      86_400_000,
+  );
+
+/**
+ * Computes the smoothed daily provision: each bucket (card invoice; other
+ * monthly bills) needs falta ÷ diasRestantes, capped by the free cash that
+ * remains after the operational minimum. The card bucket is funded first
+ * because its deadline is nearest.
+ */
+export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
+  const painel = await getPainelFinanceiro();
+  if (!painel) return null;
+
+  const supabase = await createSupabaseClient();
+  const estabelecimentoId = await getEstabelecimentoId();
+  if (!estabelecimentoId) return null;
+
+  const hoje = todayISODate();
+  const fimMes = monthBounds(hoje.slice(0, 7)).end;
+
+  // The card bucket's reserve comes from the fatura's reserva_id link; the
+  // compromissos bucket's reserve comes from the compromissos' reserva_id.
+  const faturaAberta = painel.faturas.find(
+    (f) => f.status === "ABERTA" || f.status === "FECHADA" || f.status === "PARCIALMENTE_PAGA",
+  );
+  const [{ data: faturaRow }, { data: compromissoLinks }] = await Promise.all([
+    faturaAberta
+      ? supabase.from("faturas_cartao").select("reserva_id").eq("id", faturaAberta.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("compromissos_financeiros")
+      .select("reserva_id")
+      .eq("estabelecimento_id", estabelecimentoId)
+      .is("deleted_at", null),
+  ]);
+
+  const reservaById = new Map(painel.reservas.map((r) => [r.id, r]));
+  const reservaCartao = faturaRow?.reserva_id ? reservaById.get(faturaRow.reserva_id) : undefined;
+  const reservaCompromissosIds = new Set(
+    (compromissoLinks ?? []).map((c) => c.reserva_id).filter((id): id is string => id != null),
+  );
+  const reservadoCompromissos = [...reservaCompromissosIds].reduce(
+    (acc, id) => acc + (reservaById.get(id)?.valorAtual ?? 0),
+    0,
+  );
+
+  // Expected invoice: closed amount when the cycle is closed; otherwise the
+  // larger of the reserve's meta and the running purchases total.
+  const esperadoCartao = faturaAberta
+    ? (faturaAberta.valorFechado ?? Math.max(reservaCartao?.meta ?? 0, faturaAberta.valorAtual))
+    : 0;
+  const reservadoCartao = reservaCartao?.valorAtual ?? 0;
+  const faltaCartao = Math.max(0, esperadoCartao - reservadoCartao);
+
+  const totalCompromissos = painel.compromissos
+    .filter((c) => c.status !== "PAGO")
+    .reduce((acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto), 0);
+  const faltaCompromissos = Math.max(0, totalCompromissos - reservadoCompromissos);
+
+  // Provision against the closing date (fechamento), not the due date: the
+  // family wants the invoice fully funded by the time the cycle closes.
+  const diasAteFatura = faturaAberta ? Math.max(1, daysBetween(hoje, faturaAberta.fechamento)) : 1;
+  const diasAteFimMes = Math.max(1, daysBetween(hoje, fimMes));
+
+  const resultado = provisaoDiaria({
+    faltaCartao,
+    diasAteFatura,
+    faltaCompromissos,
+    diasAteFimMes,
+    saldoLivre: painel.posicao.saldoLivre,
+    caixaMinimo: painel.caixaMinimo,
+  });
+
+  return {
+    esperadoCartao,
+    reservadoCartao,
+    faltaCartao,
+    totalCompromissos,
+    reservadoCompromissos,
+    faltaCompromissos,
+    saldoLivre: painel.posicao.saldoLivre,
+    caixaMinimo: painel.caixaMinimo,
+    diasAteFatura,
+    diasAteFimMes,
+    reservaCartaoId: reservaCartao?.id ?? null,
+    reservaCompromissosId:
+      reservaCompromissosIds.size === 1 ? [...reservaCompromissosIds][0] : null,
+    resultado,
   };
 };

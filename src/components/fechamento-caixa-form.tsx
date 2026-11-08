@@ -29,6 +29,8 @@ export const FechamentoCaixaForm = ({
   });
   const [expenseValue, setExpenseValue] = useState(initialSaida);
   const [expenseDescription, setExpenseDescription] = useState("");
+  const [entradaConta, setEntradaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
+  const [saidaConta, setSaidaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
   const [retroactiveOpen, setRetroactiveOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<(ToastMessage & { id: number }) | null>(null);
@@ -43,7 +45,7 @@ export const FechamentoCaixaForm = ({
     const total = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
     setIsSaving(true);
     try {
-      const result = await saveEntrada({ total });
+      const result = await saveEntrada({ total, conta: entradaConta });
       if (result.ok) {
         setCashEntry({ dinheiroGaveta: 0, cartao: 0, pix: 0 });
         setToast({ id: Date.now(), variant: "success", message: "Entrada Salva!" });
@@ -58,7 +60,7 @@ export const FechamentoCaixaForm = ({
     } finally {
       setIsSaving(false);
     }
-  }, [cashEntry, router]);
+  }, [cashEntry, entradaConta, router]);
 
   const handleSaveSaida = useCallback(async () => {
     setIsSaving(true);
@@ -66,6 +68,7 @@ export const FechamentoCaixaForm = ({
       const result = await saveSaida({
         valor: expenseValue,
         descricao: expenseDescription,
+        conta: saidaConta,
       });
       if (result.ok) {
         setExpenseValue(0);
@@ -82,7 +85,7 @@ export const FechamentoCaixaForm = ({
     } finally {
       setIsSaving(false);
     }
-  }, [expenseValue, expenseDescription, router]);
+  }, [expenseValue, expenseDescription, saidaConta, router]);
 
   const summary: DailySummary = useMemo(() => {
     const totalEntradas = cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
@@ -110,6 +113,10 @@ export const FechamentoCaixaForm = ({
           expenseDescription={expenseDescription}
           onExpenseValueChange={setExpenseValue}
           onExpenseDescriptionChange={setExpenseDescription}
+          entradaConta={entradaConta}
+          onEntradaContaChange={setEntradaConta}
+          saidaConta={saidaConta}
+          onSaidaContaChange={setSaidaConta}
           onSaveEntrada={handleSaveEntrada}
           onSaveSaida={handleSaveSaida}
           isSaving={isSaving}

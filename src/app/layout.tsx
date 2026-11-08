@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: '--font-plus-jakarta',
-  subsets: ['latin'],
-  display: 'swap',
+  variable: "--font-plus-jakarta",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'Mercado Amigo - Fechamento do Caixa',
+  title: "Mercado Amigo - Fechamento do Caixa",
   description:
-    'Gestão financeira simplificada para seu mercadinho. Feche o caixa de forma rápida e tranquila.',
+    "Gestão financeira simplificada para seu mercadinho. Feche o caixa de forma rápida e tranquila.",
 };
 
 export default function RootLayout({
@@ -20,10 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='pt-BR'>
-      <body
-        className={`${plusJakartaSans.variable} font-[family-name:var(--font-plus-jakarta)]`}
-      >
+    <html lang="pt-BR">
+      <body className={`${plusJakartaSans.variable} font-[family-name:var(--font-plus-jakarta)]`}>
         {children}
       </body>
     </html>

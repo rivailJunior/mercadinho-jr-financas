@@ -1,5 +1,6 @@
 import {
   BottomNav,
+  DailyProvisionCard,
   FechamentoCaixaForm,
   FixedExpenseReserve,
   WeeklyChart,
@@ -14,17 +15,19 @@ import {
   getYearlyData,
   getYearlyTotals,
 } from "@/lib/cash-closing-data";
+import { getProvisaoDiaria } from "@/lib/finance/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [weeklyData, yearlyData, { expenses, totalReservaDiaria }, today, yearly] =
+  const [weeklyData, yearlyData, { expenses, totalReservaDiaria }, today, yearly, provisao] =
     await Promise.all([
       getWeeklyData(),
       getYearlyData(),
       getFixedExpenses(),
       getTodayTotals(),
       getYearlyTotals(),
+      getProvisaoDiaria(),
     ]);
 
   return (
@@ -36,6 +39,7 @@ export default async function Home() {
       />
 
       <div className="flex-1 space-y-6 px-5 pt-6 pb-6">
+        {provisao && <DailyProvisionCard provisao={provisao} />}
         <YearlySummaryCard summary={{ totalEntradas: yearly.entrada, totalSaidas: yearly.saida }} />
         <FixedExpenseReserve expenses={expenses} totalReservaDiaria={totalReservaDiaria} />
         <WeeklyChart data={weeklyData} />

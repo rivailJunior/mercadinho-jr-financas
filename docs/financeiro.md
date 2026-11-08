@@ -88,16 +88,57 @@ que derrubaria o caixa abaixo do mínimo.
 4. **Recomenda, nunca executa** — a confirmação é sempre do usuário.
 5. Caixa abaixo do mínimo ou dia sem sobra → recomenda R$ 0.
 
+## Fluxo diário unificado (caixa do dia → modelo financeiro)
+
+O formulário "Anotar Caixa do Dia" (home) é a única entrada diária. Cada
+salvar grava **dois** registros do mesmo evento:
+
+- `lancamentos_caixa` — alimenta os relatórios/gráficos legados;
+- `movimentacoes_financeiras` — alimenta os saldos das contas em `/financas`,
+  via `lancamento_id` (FK `ON DELETE CASCADE`, migration
+  `mov_lancamento_link`), então excluir o lançamento desfaz o movimento.
+
+Roteamento de conta:
+
+- Entrada: o seletor "Onde entrou?" define a conta — Dinheiro → Caixa
+  físico; Maquininha/Pix → Maquininha.
+- Saída: o seletor "De onde saiu?" define a conta debitada (fornecedor,
+  compras do comércio).
+- Natureza sempre `OPERACIONAL` — uma operação do usuário nunca vira
+  receita nem despesa duplicada nos dois modelos.
+
+## Provisão diária ("quanto guardar hoje")
+
+`provisaoDiaria` (função pura em `src/lib/finance/provision.ts`), servida por
+`getProvisaoDiaria` em `data.ts` e exibida no card da home:
+
+1. `ritmoCartao = faltaCartao ÷ diasAteFechamento` — a fatura precisa estar
+   provisionada até o **fechamento** do ciclo.
+2. `ritmoCompromissos = faltaCompromissos ÷ diasAteFimMes` — demais contas
+   vencem no fim do mês.
+3. `disponivel = max(0, saldoLivre − caixaMinimo)`.
+4. `sugerido = min(ritmoTotal, disponivel)` — suavizado: se o acumulado já
+   está adiantado, o ritmo (e a sugestão) caem naturalmente.
+5. O cartão recebe primeiro (vencimento mais próximo); o restante vai para
+   a reserva dos demais compromissos.
+
+O botão "Guardar hoje" (`guardarParaFixas`) recalcula tudo **no servidor** e
+chama `aportar_reserva` por bucket — a sugestão da tela nunca é confiada.
+
 ## Estado inicial (seed real)
 
 - Caixa físico R$ 1.850 + Maquininha R$ 10.363 = **R$ 12.213 consolidado**.
-- Reservas: Fatura do cartão R$ 10.000 (meta R$ 20.000), Demais
-  compromissos R$ 2.213, Emergência R$ 0, Investimentos R$ 0 →
-  **R$ 12.213 reservado, R$ 0 livre**.
+- Reservas (rebalanceadas proporcionalmente às fixas de ~R$ 21.400):
+  Fatura do cartão R$ 7.263 (~70%, meta ~R$ 15.000), Demais compromissos
+  R$ 3.100 (~30%), Emergência R$ 0, Investimentos R$ 0 →
+  **R$ 10.363 reservado, R$ 1.850 livre** (o troco da gaveta fica
+  operacional).
 - Os R$ 12.213 foram registrados como `saldo_inicial` das contas —
   **não** como receita nova.
-- Compromissos mensais: pró-labore R$ 2.000, água R$ 500, energia R$ 900,
-  funcionários R$ 2.200.
+- Compromissos mensais: cartão ~R$ 15.000, pró-labore R$ 2.000,
+  funcionários R$ 2.000, água R$ 500, energia R$ 900, reserva financeira
+  R$ 1.000.
+- Ciclo do cartão: fecha dia 14, vence dia 20.
 - Seed reproduzível: `node scripts/seed-financial-setup.mjs --caixa 1850 --maquininha 10363 --write`.
 
 ## Segurança
