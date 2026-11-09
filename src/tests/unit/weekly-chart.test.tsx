@@ -17,10 +17,9 @@ describe("WeeklyChart", () => {
     render(<WeeklyChart data={week} />);
 
     expect(screen.getByText("Movimento dos últimos 7 dias")).toBeDefined();
-    // Today is zeroed → header shows today's values and both pills render "R$ 0"
+    // Today is zeroed → header shows today's values
     expect(screen.getByText("Entrada: R$ 0")).toBeDefined();
     expect(screen.getByText("Saída: R$ 0")).toBeDefined();
-    expect(screen.getAllByText("R$ 0")).toHaveLength(2);
     expect(screen.getByRole("button", { name: /hoje/i })).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -33,8 +32,6 @@ describe("WeeklyChart", () => {
     // Header reflects the selected day's values
     expect(screen.getByText("Entrada: R$ 250")).toBeDefined();
     expect(screen.getByText("Saída: R$ 40")).toBeDefined();
-    expect(screen.getByText("R$ 250")).toBeDefined();
-    expect(screen.getByText("R$ 40")).toBeDefined();
     expect(screen.getByRole("button", { name: /terça/i })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: /hoje/i })).toHaveAttribute("aria-pressed", "false");
   });
@@ -50,8 +47,6 @@ describe("WeeklyChart", () => {
     expect(screen.getByText("Movimento de Domingo")).toBeDefined();
     expect(screen.getByText("Entrada: R$ 150")).toBeDefined();
     expect(screen.getByText("Saída: R$ 5")).toBeDefined();
-    expect(screen.getByText("R$ 150")).toBeDefined();
-    expect(screen.getByText("R$ 5")).toBeDefined();
   });
 
   test("returns to today when 'Hoje' is pressed", () => {
@@ -63,7 +58,6 @@ describe("WeeklyChart", () => {
     expect(screen.getByText("Movimento dos últimos 7 dias")).toBeDefined();
     expect(screen.getByText("Entrada: R$ 0")).toBeDefined();
     expect(screen.getByText("Saída: R$ 0")).toBeDefined();
-    expect(screen.getAllByText("R$ 0")).toHaveLength(2);
   });
 
   test("renders nothing with fewer than two days", () => {

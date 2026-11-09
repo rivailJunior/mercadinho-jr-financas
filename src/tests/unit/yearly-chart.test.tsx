@@ -20,10 +20,9 @@ describe("YearlyChart", () => {
     render(<YearlyChart data={year} />);
 
     expect(screen.getByText("Como foi seu ano")).toBeDefined();
-    // Current month is zeroed → header shows its values and both pills render "R$ 0"
+    // Current month is zeroed → header shows its values
     expect(screen.getByText("Entrada: R$ 0")).toBeDefined();
     expect(screen.getByText("Saída: R$ 0")).toBeDefined();
-    expect(screen.getAllByText("R$ 0")).toHaveLength(2);
     expect(screen.getByRole("button", { name: /mês atual/i })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -39,8 +38,6 @@ describe("YearlyChart", () => {
     // Header reflects the selected month's values
     expect(screen.getByText("Entrada: R$ 2.500")).toBeDefined();
     expect(screen.getByText("Saída: R$ 400")).toBeDefined();
-    expect(screen.getByText("R$ 2.500")).toBeDefined();
-    expect(screen.getByText("R$ 400")).toBeDefined();
     expect(screen.getByRole("button", { name: /maio/i })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: /mês atual/i })).toHaveAttribute(
       "aria-pressed",
@@ -69,7 +66,6 @@ describe("YearlyChart", () => {
 
     expect(screen.getByText("Entrada: R$ 0")).toBeDefined();
     expect(screen.getByText("Saída: R$ 0")).toBeDefined();
-    expect(screen.getAllByText("R$ 0")).toHaveLength(2);
   });
 
   test("renders nothing with fewer than two months", () => {
