@@ -8,7 +8,7 @@ const SVG_HEIGHT = 100;
 const PADDING_TOP = 15;
 const PADDING_BOTTOM = 10;
 const CHART_HEIGHT = SVG_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
-const PILL_WIDTH = 52;
+const _PILL_WIDTH = 52;
 const PILL_HEIGHT = 16;
 
 const buildPoints = (values: number[], maxValue: number) => {
@@ -118,7 +118,8 @@ export const MovementChart = ({
 
   // When the saída dot sits right above the entrada dot, the default "below the
   // dot" pill would cover the entrada pill — flip it above instead.
-  const saidaPillY = selEntrada.y - selSaida.y > 14 ? selSaida.y - PILL_HEIGHT - 6 : selSaida.y + 8;
+  const _saidaPillY =
+    selEntrada.y - selSaida.y > 14 ? selSaida.y - PILL_HEIGHT - 6 : selSaida.y + 8;
 
   const entradaGradId = `${gradientPrefix}EntradaGrad`;
   const saidaGradId = `${gradientPrefix}SaidaGrad`;

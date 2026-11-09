@@ -69,7 +69,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             bgColor="bg-brand-blue"
             labelColor="text-blue-100"
             subtitleColor="text-blue-200"
-            barColor="bg-blue-300/40"
             shadowClass="shadow-card-blue"
             icon={Landmark}
           />
@@ -80,7 +79,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             bgColor="bg-brand-deep-purple"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
-            barColor="bg-indigo-300/40"
             shadowClass="shadow-card-purple"
             icon={PiggyBank}
           />
@@ -92,7 +90,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
               bgColor={livre >= 0 ? "bg-brand-mint" : "bg-brand-coral"}
               labelColor={livre >= 0 ? "text-emerald-100" : "text-rose-100"}
               subtitleColor={livre >= 0 ? "text-emerald-100" : "text-rose-200"}
-              barColor={livre >= 0 ? "bg-emerald-300/40" : "bg-rose-300/40"}
               shadowClass={livre >= 0 ? "shadow-card-mint" : "shadow-card-coral"}
               icon={Wallet}
             />

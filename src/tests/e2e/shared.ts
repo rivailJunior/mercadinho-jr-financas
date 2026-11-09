@@ -12,6 +12,6 @@ export class PlayConfigPage {
   }
 
   async goto(route = "/") {
-    await this.page.goto("http://localhost:3000" + route);
+    await this.page.goto(`http://localhost:3000${route}`);
   }
 }

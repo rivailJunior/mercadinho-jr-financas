@@ -8,7 +8,6 @@ interface SummaryCardItemProps {
   bgColor: string;
   labelColor: string;
   subtitleColor: string;
-  barColor: string;
   shadowClass: string;
   icon?: LucideIcon;
 }
@@ -20,7 +19,6 @@ export const SummaryCardItem = ({
   bgColor,
   labelColor,
   subtitleColor,
-  barColor,
   shadowClass,
   icon: Icon,
 }: SummaryCardItemProps) => (

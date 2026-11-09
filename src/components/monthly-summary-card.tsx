@@ -26,7 +26,6 @@ export const MonthlySummaryCard = ({ summary }: MonthlySummaryCardProps) => {
           bgColor="bg-brand-blue"
           labelColor="text-blue-100"
           subtitleColor="text-blue-200"
-          barColor="bg-blue-300/40"
           shadowClass="shadow-card-blue"
           icon={TrendingUp}
         />
@@ -37,7 +36,6 @@ export const MonthlySummaryCard = ({ summary }: MonthlySummaryCardProps) => {
           bgColor="bg-brand-coral"
           labelColor="text-rose-100"
           subtitleColor="text-rose-200"
-          barColor="bg-rose-300/40"
           shadowClass="shadow-card-coral"
           icon={TrendingDown}
         />

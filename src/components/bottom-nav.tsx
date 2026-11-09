@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { BarChart3, Home, PiggyBank, PlusCircle } from "lucide-react";
+import { BarChart3, Home, PiggyBank } from "lucide-react";
 import Link from "next/link";
 
 type NavItem = "caixa" | "relatorio" | "financas" | "caderninho";
@@ -29,9 +29,19 @@ const NavItemContent = ({
 }: { item: (typeof NAV_ITEMS)[number]; isActive: boolean }) => {
   const Icon = item.icon;
   return (
-    <div className={cn("flex flex-1 flex-col items-center gap-1 py-1", isActive ? "bg-indigo-600 rounded-lg" : "text-slate-400")}>
+    <div
+      className={cn(
+        "flex flex-1 flex-col items-center gap-1 py-1",
+        isActive ? "bg-indigo-600 rounded-lg" : "text-slate-400",
+      )}
+    >
       <Icon className={`h-6 w-6 stroke-2 ${isActive ? "text-white" : ""}`} />
-      <span className={cn("text-[10px] tracking-regular", isActive ? "font-bold text-white px-2" : "font-bold")}>
+      <span
+        className={cn(
+          "text-[10px] tracking-regular",
+          isActive ? "font-bold text-white px-2" : "font-bold",
+        )}
+      >
         {item.label}
       </span>
     </div>

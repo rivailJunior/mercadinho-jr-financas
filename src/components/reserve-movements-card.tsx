@@ -10,12 +10,6 @@ interface ReserveMovementsCardProps {
   movimentos: MovimentoReserva[];
 }
 
-const TIPO_LABEL: Record<string, string> = {
-  APORTE: "Guardado",
-  RETIRADA: "Retirado",
-  TRANSFERENCIA: "Transferido",
-};
-
 export const ReserveMovementsCard = ({ movimentos }: ReserveMovementsCardProps) => {
   const [deleteTarget, setDeleteTarget] = useState<MovimentoReserva | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
