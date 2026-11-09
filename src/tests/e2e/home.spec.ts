@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { PlayConfigPage } from "./shared";
 
 test.describe("App", () => {
@@ -9,12 +9,10 @@ test.describe("App", () => {
   });
 
   test("should open App properly ", async ({ page }) => {
-    await expect(
-      page.getByText(/Hey, let's build something together?/i)
-    ).toBeVisible();
+    await expect(page.getByText(/Hey, let's build something together?/i)).toBeVisible();
 
     await expect(
-      page.getByText(/We are here to help you with your Next.js project/i)
+      page.getByText(/We are here to help you with your Next.js project/i),
     ).toBeVisible();
   });
 });

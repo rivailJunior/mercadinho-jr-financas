@@ -1,4 +1,4 @@
-import { type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export class PlayConfigPage {
   readonly page: Page;
@@ -11,7 +11,7 @@ export class PlayConfigPage {
     await this.page.close();
   }
 
-  async goto(route: string = "/") {
-    await this.page.goto("http://localhost:3000" + route);
+  async goto(route = "/") {
+    await this.page.goto(`http://localhost:3000${route}`);
   }
 }

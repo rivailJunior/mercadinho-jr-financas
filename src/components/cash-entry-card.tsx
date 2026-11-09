@@ -16,6 +16,13 @@ const QUICK_EXPENSE_TAGS = [
   { emoji: "🔧", label: "Manutenção", value: "Agua /Luz / Telefone / Etc" },
 ];
 
+type ContaOpcao = "CAIXA_FISICO" | "MAQUININHA";
+
+const CONTA_OPCOES: { id: ContaOpcao; label: string }[] = [
+  { id: "CAIXA_FISICO", label: "Dinheiro (gaveta)" },
+  { id: "MAQUININHA", label: "Maquininha / Pix" },
+];
+
 interface CashEntryCardProps {
   cashValues: CashEntry;
   onCashChange: (values: CashEntry) => void;
@@ -23,10 +30,40 @@ interface CashEntryCardProps {
   expenseDescription: string;
   onExpenseValueChange: (value: number) => void;
   onExpenseDescriptionChange: (description: string) => void;
+  entradaConta: ContaOpcao;
+  onEntradaContaChange: (conta: ContaOpcao) => void;
+  saidaConta: ContaOpcao;
+  onSaidaContaChange: (conta: ContaOpcao) => void;
   onSaveEntrada: () => void;
   onSaveSaida: () => void;
   isSaving: boolean;
 }
+
+const ContaSelector = ({
+  label,
+  value,
+  onChange,
+}: { label: string; value: ContaOpcao; onChange: (c: ContaOpcao) => void }) => (
+  <div className="space-y-1.5">
+    <span className="block text-xs font-bold uppercase tracking-wide text-slate-600">{label}</span>
+    <div className="grid grid-cols-2 gap-2">
+      {CONTA_OPCOES.map((op) => (
+        <button
+          key={op.id}
+          type="button"
+          onClick={() => onChange(op.id)}
+          aria-pressed={value === op.id}
+          className={cn(
+            "rounded-xl px-3 py-2.5 text-xs font-bold transition-all",
+            value === op.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500",
+          )}
+        >
+          {op.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 export const CashEntryCard = ({
   cashValues,
@@ -35,6 +72,10 @@ export const CashEntryCard = ({
   expenseDescription,
   onExpenseValueChange,
   onExpenseDescriptionChange,
+  entradaConta,
+  onEntradaContaChange,
+  saidaConta,
+  onSaidaContaChange,
   onSaveEntrada,
   onSaveSaida,
   isSaving,
@@ -125,6 +166,12 @@ export const CashEntryCard = ({
             </p>
           </div>
 
+          <ContaSelector
+            label="Onde entrou?"
+            value={entradaConta}
+            onChange={onEntradaContaChange}
+          />
+
           <div className="pt-1">
             <button
               type="button"
@@ -157,11 +204,13 @@ export const CashEntryCard = ({
 
           <CurrencyInput
             id="saida-despesas"
-            label="Valor que saiu da gaveta:"
+            label="Valor que saiu:"
             value={expenseValue}
             onChange={onExpenseValueChange}
             placeholder="0,00"
           />
+
+          <ContaSelector label="De onde saiu?" value={saidaConta} onChange={onSaidaContaChange} />
 
           <div className="space-y-1.5">
             <label

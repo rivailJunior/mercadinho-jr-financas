@@ -1,5 +1,5 @@
-import { SummaryCardItem } from '@/components/summary-card-item';
-import type { DailySummary } from '@/types/cashClosing';
+import { SummaryCardItem } from "@/components/summary-card-item";
+import type { DailySummary } from "@/types/cashClosing";
 
 interface DailySummaryCardProps {
   summary: DailySummary;
@@ -7,11 +7,11 @@ interface DailySummaryCardProps {
 
 export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
   return (
-    <section aria-labelledby='daily-summary-title'>
-      <div className='mb-3 flex items-center justify-between'>
+    <section aria-labelledby="daily-summary-title">
+      <div className="mb-3 flex items-center justify-between">
         <h2
-          id='daily-summary-title'
-          className='text-sm font-bold uppercase tracking-wider text-slate-500'
+          id="daily-summary-title"
+          className="text-sm font-bold uppercase tracking-wider text-slate-500"
         >
           Resumo de Hoje
         </h2>
@@ -20,47 +20,36 @@ export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
         </span> */}
       </div>
 
-      <div className='grid grid-cols-2 gap-3.5'>
+      <div className="grid grid-cols-2 gap-3.5">
         <SummaryCardItem
-          label='Entrou Bruto'
+          label="Entrou Bruto"
           value={summary.totalEntradas}
-          subtitle='Total apurado hoje'
-          bgColor='bg-brand-blue'
-          labelColor='text-blue-100'
-          subtitleColor='text-blue-200'
-          barColor='bg-blue-300/40'
-          shadowClass='shadow-card-blue'
+          subtitle="Total apurado hoje"
+          bgColor="bg-brand-blue"
+          labelColor="text-blue-100"
+          subtitleColor="text-blue-200"
+          shadowClass="shadow-card-blue"
         />
         <SummaryCardItem
-          label='Saiu no Balcão'
+          label="Saiu no Balcão"
           value={summary.totalSaidas}
-          subtitle='Compras de reposição'
-          bgColor='bg-brand-coral'
-          labelColor='text-rose-100'
-          subtitleColor='text-rose-200'
-          barColor='bg-rose-300/40'
-          shadowClass='shadow-card-coral'
+          subtitle="Compras de reposição"
+          bgColor="bg-brand-coral"
+          labelColor="text-rose-100"
+          subtitleColor="text-rose-200"
+          shadowClass="shadow-card-coral"
         />
-        <SummaryCardItem
-          label='Guardar p/ Contas'
-          value={summary.reservaDiaria}
-          subtitle='Separar na gaveta'
-          bgColor='bg-brand-mint'
-          labelColor='text-emerald-100'
-          subtitleColor='text-emerald-100'
-          barColor='bg-emerald-300/40'
-          shadowClass='shadow-card-mint'
-        />
-        <SummaryCardItem
-          label='Livre de Verdade'
-          value={summary.sobraLimpa}
-          subtitle='Lucro limpo do dia'
-          bgColor='bg-brand-deep-purple'
-          labelColor='text-indigo-100'
-          subtitleColor='text-indigo-200'
-          barColor='bg-indigo-300/40'
-          shadowClass='shadow-card-purple'
-        />
+        <div className="col-span-2">
+          <SummaryCardItem
+            label="Livre de Verdade"
+            value={summary.sobraLimpa}
+            subtitle="Lucro limpo do dia"
+            bgColor="bg-brand-deep-purple"
+            labelColor="text-indigo-100"
+            subtitleColor="text-indigo-200"
+            shadowClass="shadow-card-purple"
+          />
+        </div>
       </div>
     </section>
   );

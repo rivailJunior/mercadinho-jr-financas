@@ -13,7 +13,6 @@ export interface ExpenseEntry {
 export interface DailySummary {
   totalEntradas: number;
   totalSaidas: number;
-  reservaDiaria: number;
   sobraLimpa: number;
 }
 
@@ -34,12 +33,6 @@ export interface YearlyMonth {
   diaAbreviado: string;
   valor: number;
   saida: number;
-}
-
-export interface FixedExpense {
-  nome: string;
-  valorMensal: number;
-  reservaDiaria: number;
 }
 
 export interface RetroactiveEntry {

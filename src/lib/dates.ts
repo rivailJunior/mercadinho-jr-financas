@@ -73,6 +73,13 @@ export const todayISODate = (): string => toManausISODate(new Date());
 export const daysAgoISODate = (days: number): string =>
   toManausISODate(new Date(Date.now() - days * DAY_MS));
 
+/** Whole calendar days from `fromIso` to `toIso` (negative when `from` is later). */
+export const daysBetween = (fromIso: string, toIso: string): number =>
+  Math.round(
+    (new Date(`${toIso}T12:00:00Z`).getTime() - new Date(`${fromIso}T12:00:00Z`).getTime()) /
+      DAY_MS,
+  );
+
 /** Day-of-week index (0 = Sunday) for a YYYY-MM-DD date. */
 export const weekdayIndexFromISODate = (isoDate: string): number =>
   new Date(`${isoDate}T12:00:00Z`).getUTCDay();

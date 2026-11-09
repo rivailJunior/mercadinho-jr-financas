@@ -32,30 +32,179 @@ export type Database = {
         };
         Relationships: [];
       };
+      compras_cartao: {
+        Row: {
+          categoria_id: number | null;
+          created_at: string;
+          data_compra: string;
+          deleted_at: string | null;
+          descricao: string | null;
+          estabelecimento_id: string;
+          fatura_id: string | null;
+          id: string;
+          updated_at: string;
+          valor_centavos: number;
+        };
+        Insert: {
+          categoria_id?: number | null;
+          created_at?: string;
+          data_compra: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id: string;
+          fatura_id?: string | null;
+          id?: string;
+          updated_at?: string;
+          valor_centavos: number;
+        };
+        Update: {
+          categoria_id?: number | null;
+          created_at?: string;
+          data_compra?: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id?: string;
+          fatura_id?: string | null;
+          id?: string;
+          updated_at?: string;
+          valor_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "compras_cartao_categoria_id_fkey";
+            columns: ["categoria_id"];
+            isOneToOne: false;
+            referencedRelation: "categorias";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compras_cartao_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compras_cartao_fatura_id_fkey";
+            columns: ["fatura_id"];
+            isOneToOne: false;
+            referencedRelation: "faturas_cartao";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      compromissos_financeiros: {
+        Row: {
+          ativo: boolean;
+          categoria_id: number | null;
+          created_at: string;
+          deleted_at: string | null;
+          destino_conta_id: string | null;
+          estabelecimento_id: string;
+          id: string;
+          nome: string;
+          periodicidade: Database["public"]["Enums"]["compromisso_periodicidade"];
+          prioridade: number;
+          reserva_id: string | null;
+          status: Database["public"]["Enums"]["compromisso_status"];
+          updated_at: string;
+          valor_efetivo_centavos: number | null;
+          valor_pago_centavos: number;
+          valor_previsto_centavos: number;
+          vencimento: string | null;
+        };
+        Insert: {
+          ativo?: boolean;
+          categoria_id?: number | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          destino_conta_id?: string | null;
+          estabelecimento_id: string;
+          id?: string;
+          nome: string;
+          periodicidade?: Database["public"]["Enums"]["compromisso_periodicidade"];
+          prioridade?: number;
+          reserva_id?: string | null;
+          status?: Database["public"]["Enums"]["compromisso_status"];
+          updated_at?: string;
+          valor_efetivo_centavos?: number | null;
+          valor_pago_centavos?: number;
+          valor_previsto_centavos?: number;
+          vencimento?: string | null;
+        };
+        Update: {
+          ativo?: boolean;
+          categoria_id?: number | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          destino_conta_id?: string | null;
+          estabelecimento_id?: string;
+          id?: string;
+          nome?: string;
+          periodicidade?: Database["public"]["Enums"]["compromisso_periodicidade"];
+          prioridade?: number;
+          reserva_id?: string | null;
+          status?: Database["public"]["Enums"]["compromisso_status"];
+          updated_at?: string;
+          valor_efetivo_centavos?: number | null;
+          valor_pago_centavos?: number;
+          valor_previsto_centavos?: number;
+          vencimento?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "compromissos_financeiros_categoria_id_fkey";
+            columns: ["categoria_id"];
+            isOneToOne: false;
+            referencedRelation: "categorias";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compromissos_financeiros_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compromissos_financeiros_reserva_id_fkey";
+            columns: ["reserva_id"];
+            isOneToOne: false;
+            referencedRelation: "reservas_financeiras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       config_financeira: {
         Row: {
+          caixa_minimo_centavos: number;
           created_at: string | null;
           estabelecimento_id: string | null;
           id: number;
           margem_bruta_pct: number;
+          prioridade_alocacao: Json | null;
           split_contingencia_pct: number;
           split_reinvestimento_pct: number;
           split_reserva_pct: number;
         };
         Insert: {
+          caixa_minimo_centavos?: number;
           created_at?: string | null;
           estabelecimento_id?: string | null;
           id?: number;
           margem_bruta_pct?: number;
+          prioridade_alocacao?: Json | null;
           split_contingencia_pct?: number;
           split_reinvestimento_pct?: number;
           split_reserva_pct?: number;
         };
         Update: {
+          caixa_minimo_centavos?: number;
           created_at?: string | null;
           estabelecimento_id?: string | null;
           id?: number;
           margem_bruta_pct?: number;
+          prioridade_alocacao?: Json | null;
           split_contingencia_pct?: number;
           split_reinvestimento_pct?: number;
           split_reserva_pct?: number;
@@ -63,6 +212,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "config_financeira_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contas_financeiras: {
+        Row: {
+          ativo: boolean;
+          created_at: string;
+          data_saldo_inicial: string;
+          deleted_at: string | null;
+          estabelecimento_id: string;
+          id: string;
+          nome: string;
+          saldo_inicial_centavos: number;
+          tipo: Database["public"]["Enums"]["conta_tipo"];
+          updated_at: string;
+        };
+        Insert: {
+          ativo?: boolean;
+          created_at?: string;
+          data_saldo_inicial?: string;
+          deleted_at?: string | null;
+          estabelecimento_id: string;
+          id?: string;
+          nome: string;
+          saldo_inicial_centavos?: number;
+          tipo: Database["public"]["Enums"]["conta_tipo"];
+          updated_at?: string;
+        };
+        Update: {
+          ativo?: boolean;
+          created_at?: string;
+          data_saldo_inicial?: string;
+          deleted_at?: string | null;
+          estabelecimento_id?: string;
+          id?: string;
+          nome?: string;
+          saldo_inicial_centavos?: number;
+          tipo?: Database["public"]["Enums"]["conta_tipo"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contas_financeiras_estabelecimento_id_fkey";
             columns: ["estabelecimento_id"];
             isOneToOne: false;
             referencedRelation: "estabelecimentos";
@@ -132,6 +328,66 @@ export type Database = {
         };
         Relationships: [];
       };
+      faturas_cartao: {
+        Row: {
+          created_at: string;
+          deleted_at: string | null;
+          estabelecimento_id: string;
+          fechamento: string;
+          id: string;
+          reserva_id: string | null;
+          status: Database["public"]["Enums"]["fatura_status"];
+          updated_at: string;
+          valor_fechado_centavos: number | null;
+          valor_pago_centavos: number;
+          valor_reservado_centavos: number;
+          vencimento: string;
+        };
+        Insert: {
+          created_at?: string;
+          deleted_at?: string | null;
+          estabelecimento_id: string;
+          fechamento: string;
+          id?: string;
+          reserva_id?: string | null;
+          status?: Database["public"]["Enums"]["fatura_status"];
+          updated_at?: string;
+          valor_fechado_centavos?: number | null;
+          valor_pago_centavos?: number;
+          valor_reservado_centavos?: number;
+          vencimento: string;
+        };
+        Update: {
+          created_at?: string;
+          deleted_at?: string | null;
+          estabelecimento_id?: string;
+          fechamento?: string;
+          id?: string;
+          reserva_id?: string | null;
+          status?: Database["public"]["Enums"]["fatura_status"];
+          updated_at?: string;
+          valor_fechado_centavos?: number | null;
+          valor_pago_centavos?: number;
+          valor_reservado_centavos?: number;
+          vencimento?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "faturas_cartao_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "faturas_cartao_reserva_id_fkey";
+            columns: ["reserva_id"];
+            isOneToOne: false;
+            referencedRelation: "reservas_financeiras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lancamentos_caixa: {
         Row: {
           categoria_id: number | null;
@@ -195,8 +451,379 @@ export type Database = {
           },
         ];
       };
+      movimentacoes_financeiras: {
+        Row: {
+          categoria_id: number | null;
+          compromisso_id: string | null;
+          conta_id: string;
+          created_at: string;
+          data_referencia: string;
+          deleted_at: string | null;
+          descricao: string | null;
+          estabelecimento_id: string;
+          fatura_id: string | null;
+          id: string;
+          lancamento_id: string | null;
+          natureza: Database["public"]["Enums"]["movimento_natureza"];
+          origem: string;
+          tipo: Database["public"]["Enums"]["movimento_tipo"];
+          transferencia_id: string | null;
+          updated_at: string;
+          valor_centavos: number;
+        };
+        Insert: {
+          categoria_id?: number | null;
+          compromisso_id?: string | null;
+          conta_id: string;
+          created_at?: string;
+          data_referencia?: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id: string;
+          fatura_id?: string | null;
+          id?: string;
+          lancamento_id?: string | null;
+          natureza?: Database["public"]["Enums"]["movimento_natureza"];
+          origem?: string;
+          tipo: Database["public"]["Enums"]["movimento_tipo"];
+          transferencia_id?: string | null;
+          updated_at?: string;
+          valor_centavos: number;
+        };
+        Update: {
+          categoria_id?: number | null;
+          compromisso_id?: string | null;
+          conta_id?: string;
+          created_at?: string;
+          data_referencia?: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id?: string;
+          fatura_id?: string | null;
+          id?: string;
+          lancamento_id?: string | null;
+          natureza?: Database["public"]["Enums"]["movimento_natureza"];
+          origem?: string;
+          tipo?: Database["public"]["Enums"]["movimento_tipo"];
+          transferencia_id?: string | null;
+          updated_at?: string;
+          valor_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_financeiras_lancamento_id_fkey";
+            columns: ["lancamento_id"];
+            isOneToOne: false;
+            referencedRelation: "lancamentos_caixa";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_categoria_id_fkey";
+            columns: ["categoria_id"];
+            isOneToOne: false;
+            referencedRelation: "categorias";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_compromisso_id_fkey";
+            columns: ["compromisso_id"];
+            isOneToOne: false;
+            referencedRelation: "compromissos_financeiros";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_conta_id_fkey";
+            columns: ["conta_id"];
+            isOneToOne: false;
+            referencedRelation: "contas_financeiras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_conta_id_fkey";
+            columns: ["conta_id"];
+            isOneToOne: false;
+            referencedRelation: "v_saldos_contas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_fatura_id_fkey";
+            columns: ["fatura_id"];
+            isOneToOne: false;
+            referencedRelation: "faturas_cartao";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_financeiras_transferencia_id_fkey";
+            columns: ["transferencia_id"];
+            isOneToOne: false;
+            referencedRelation: "transferencias";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      movimentacoes_reservas: {
+        Row: {
+          contraparte_reserva_id: string | null;
+          created_at: string;
+          data_referencia: string;
+          descricao: string | null;
+          estabelecimento_id: string;
+          id: string;
+          reserva_id: string;
+          tipo: Database["public"]["Enums"]["reserva_mov_tipo"];
+          valor_centavos: number;
+        };
+        Insert: {
+          contraparte_reserva_id?: string | null;
+          created_at?: string;
+          data_referencia?: string;
+          descricao?: string | null;
+          estabelecimento_id: string;
+          id?: string;
+          reserva_id: string;
+          tipo: Database["public"]["Enums"]["reserva_mov_tipo"];
+          valor_centavos: number;
+        };
+        Update: {
+          contraparte_reserva_id?: string | null;
+          created_at?: string;
+          data_referencia?: string;
+          descricao?: string | null;
+          estabelecimento_id?: string;
+          id?: string;
+          reserva_id?: string;
+          tipo?: Database["public"]["Enums"]["reserva_mov_tipo"];
+          valor_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_reservas_contraparte_reserva_id_fkey";
+            columns: ["contraparte_reserva_id"];
+            isOneToOne: false;
+            referencedRelation: "reservas_financeiras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_reservas_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "movimentacoes_reservas_reserva_id_fkey";
+            columns: ["reserva_id"];
+            isOneToOne: false;
+            referencedRelation: "reservas_financeiras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pagamentos_compromissos: {
+        Row: {
+          compromisso_id: string;
+          created_at: string;
+          data_pagamento: string;
+          descricao: string | null;
+          estabelecimento_id: string;
+          id: string;
+          movimentacao_id: string | null;
+          valor_centavos: number;
+        };
+        Insert: {
+          compromisso_id: string;
+          created_at?: string;
+          data_pagamento?: string;
+          descricao?: string | null;
+          estabelecimento_id: string;
+          id?: string;
+          movimentacao_id?: string | null;
+          valor_centavos: number;
+        };
+        Update: {
+          compromisso_id?: string;
+          created_at?: string;
+          data_pagamento?: string;
+          descricao?: string | null;
+          estabelecimento_id?: string;
+          id?: string;
+          movimentacao_id?: string | null;
+          valor_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_compromissos_compromisso_id_fkey";
+            columns: ["compromisso_id"];
+            isOneToOne: false;
+            referencedRelation: "compromissos_financeiros";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pagamentos_compromissos_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pagamentos_compromissos_movimentacao_id_fkey";
+            columns: ["movimentacao_id"];
+            isOneToOne: false;
+            referencedRelation: "movimentacoes_financeiras";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reservas_financeiras: {
+        Row: {
+          ativo: boolean;
+          created_at: string;
+          deleted_at: string | null;
+          estabelecimento_id: string;
+          finalidade: string | null;
+          id: string;
+          meta_centavos: number | null;
+          nome: string;
+          prioridade: number;
+          updated_at: string;
+          valor_atual_centavos: number;
+        };
+        Insert: {
+          ativo?: boolean;
+          created_at?: string;
+          deleted_at?: string | null;
+          estabelecimento_id: string;
+          finalidade?: string | null;
+          id?: string;
+          meta_centavos?: number | null;
+          nome: string;
+          prioridade?: number;
+          updated_at?: string;
+          valor_atual_centavos?: number;
+        };
+        Update: {
+          ativo?: boolean;
+          created_at?: string;
+          deleted_at?: string | null;
+          estabelecimento_id?: string;
+          finalidade?: string | null;
+          id?: string;
+          meta_centavos?: number | null;
+          nome?: string;
+          prioridade?: number;
+          updated_at?: string;
+          valor_atual_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservas_financeiras_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      transferencias: {
+        Row: {
+          conta_destino_id: string;
+          conta_origem_id: string;
+          created_at: string;
+          data_referencia: string;
+          deleted_at: string | null;
+          descricao: string | null;
+          estabelecimento_id: string;
+          id: string;
+          valor_centavos: number;
+        };
+        Insert: {
+          conta_destino_id: string;
+          conta_origem_id: string;
+          created_at?: string;
+          data_referencia?: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id: string;
+          id?: string;
+          valor_centavos: number;
+        };
+        Update: {
+          conta_destino_id?: string;
+          conta_origem_id?: string;
+          created_at?: string;
+          data_referencia?: string;
+          deleted_at?: string | null;
+          descricao?: string | null;
+          estabelecimento_id?: string;
+          id?: string;
+          valor_centavos?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_conta_destino_id_fkey";
+            columns: ["conta_destino_id"];
+            isOneToOne: false;
+            referencedRelation: "contas_financeiras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_conta_destino_id_fkey";
+            columns: ["conta_destino_id"];
+            isOneToOne: false;
+            referencedRelation: "v_saldos_contas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_conta_origem_id_fkey";
+            columns: ["conta_origem_id"];
+            isOneToOne: false;
+            referencedRelation: "contas_financeiras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_conta_origem_id_fkey";
+            columns: ["conta_origem_id"];
+            isOneToOne: false;
+            referencedRelation: "v_saldos_contas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
+      v_saldos_contas: {
+        Row: {
+          ativo: boolean | null;
+          estabelecimento_id: string | null;
+          id: string | null;
+          nome: string | null;
+          saldo_atual_centavos: number | null;
+          tipo: Database["public"]["Enums"]["conta_tipo"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contas_financeiras_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       view_resumo_diario: {
         Row: {
           contingencia_dia: number | null;
@@ -214,10 +841,94 @@ export type Database = {
       };
     };
     Functions: {
-      [_ in never]: never;
+      aportar_reserva: {
+        Args: {
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_reserva_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
+      criar_transferencia: {
+        Args: {
+          p_conta_destino_id: string;
+          p_conta_origem_id: string;
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: string;
+      };
+      desfazer_aporte_reserva: {
+        Args: { p_movimentacao_id: string };
+        Returns: undefined;
+      };
+      pagar_compromisso: {
+        Args: {
+          p_compromisso_id: string;
+          p_conta_id: string;
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
+      pagar_fatura: {
+        Args: {
+          p_conta_id: string;
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_fatura_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
+      retirar_reserva: {
+        Args: {
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_reserva_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
+      transferir_entre_reservas: {
+        Args: {
+          p_data_referencia?: string;
+          p_descricao?: string;
+          p_estabelecimento_id: string;
+          p_reserva_destino_id: string;
+          p_reserva_origem_id: string;
+          p_valor_centavos: number;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
-      [_ in never]: never;
+      compromisso_periodicidade: "UNICO" | "SEMANAL" | "MENSAL" | "ANUAL";
+      compromisso_status:
+        | "PENDENTE"
+        | "PARCIALMENTE_RESERVADO"
+        | "RESERVADO"
+        | "PARCIALMENTE_PAGO"
+        | "PAGO"
+        | "VENCIDO";
+      conta_tipo: "CAIXA_FISICO" | "MAQUININHA" | "BANCO";
+      fatura_status: "ABERTA" | "FECHADA" | "PARCIALMENTE_PAGA" | "PAGA" | "VENCIDA";
+      movimento_natureza:
+        | "OPERACIONAL"
+        | "TRANSFERENCIA"
+        | "LIQUIDACAO_FATURA"
+        | "LIQUIDACAO_COMPROMISSO"
+        | "SALDO_INICIAL";
+      movimento_tipo: "ENTRADA" | "SAIDA";
+      reserva_mov_tipo: "APORTE" | "RETIRADA" | "TRANSFERENCIA_ENTRADA" | "TRANSFERENCIA_SAIDA";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -342,6 +1053,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      compromisso_periodicidade: ["UNICO", "SEMANAL", "MENSAL", "ANUAL"],
+      compromisso_status: [
+        "PENDENTE",
+        "PARCIALMENTE_RESERVADO",
+        "RESERVADO",
+        "PARCIALMENTE_PAGO",
+        "PAGO",
+        "VENCIDO",
+      ],
+      conta_tipo: ["CAIXA_FISICO", "MAQUININHA", "BANCO"],
+      fatura_status: ["ABERTA", "FECHADA", "PARCIALMENTE_PAGA", "PAGA", "VENCIDA"],
+      movimento_natureza: [
+        "OPERACIONAL",
+        "TRANSFERENCIA",
+        "LIQUIDACAO_FATURA",
+        "LIQUIDACAO_COMPROMISSO",
+        "SALDO_INICIAL",
+      ],
+      movimento_tipo: ["ENTRADA", "SAIDA"],
+      reserva_mov_tipo: ["APORTE", "RETIRADA", "TRANSFERENCIA_ENTRADA", "TRANSFERENCIA_SAIDA"],
+    },
   },
 } as const;

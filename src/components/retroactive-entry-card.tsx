@@ -55,17 +55,18 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
   const dayBeforeISO = daysAgoISODate(2);
 
   return (
-    <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={handleClose}
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      open
       aria-labelledby="retroactive-title"
+      className="fixed inset-0 z-30 m-0 flex h-full max-h-none w-full max-w-none items-end justify-center border-0 bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") handleClose();
+      }}
     >
-      <div
-        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-4xl bg-white p-6 shadow-2xl sm:rounded-3xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-4xl bg-white p-6 shadow-2xl sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <div className="flex items-center gap-2">
             <span className="text-2xl">📅</span>
@@ -89,7 +90,10 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">
+          <label
+            htmlFor="input-data-escolhida"
+            className="block text-xs font-bold uppercase tracking-wide text-slate-600"
+          >
             Qual foi o dia que faltou?
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -145,9 +149,9 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">
+          <p className="block text-xs font-bold uppercase tracking-wide text-slate-600">
             O que foi essa movimentação?
-          </label>
+          </p>
           <div className="grid grid-cols-2 gap-2">
             <label
               className={cn(
@@ -226,6 +230,6 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
