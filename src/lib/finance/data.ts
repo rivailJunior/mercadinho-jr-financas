@@ -6,6 +6,7 @@ import {
   type PosicaoFinanceira,
   type ProvisaoResult,
   type Reserva,
+  acumuladoCiclo,
   derivarStatus,
   posicaoFinanceira,
   provisaoDiaria,
@@ -168,9 +169,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   // paid on the 6th has accrued 2 daily installments by the 8th.
   const acumuladoDe = (r: CompromissoRow): Cents => {
     const total = r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
-    const cicloInicio = vencimentoCicloAnterior(r.vencimento ?? fimMes);
-    const dias = Math.max(0, daysBetween(cicloInicio, hoje));
-    return Math.min(pendenteDe(r), Math.floor((total * dias) / 30));
+    return Math.min(pendenteDe(r), acumuladoCiclo(total, r.vencimento ?? fimMes, hoje));
   };
   const reservadoPorCompromisso = new Map<string, Cents>();
   for (const [reservaId, rows] of porReserva) {
@@ -217,11 +216,13 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       (acc, c) => acc + (c.valor_centavos ?? 0),
       0,
     );
+    const metaReserva = reservas.find((r) => r.id === f.reserva_id)?.meta ?? 0;
     return {
       id: f.id,
       fechamento: f.fechamento,
       vencimento: f.vencimento,
       valorAtual: f.valor_fechado_centavos ?? cicloAberto,
+      valorEsperado: f.valor_fechado_centavos ?? Math.max(metaReserva, cicloAberto),
       valorFechado: f.valor_fechado_centavos ?? undefined,
       valorReservado: f.valor_reservado_centavos,
       valorPago: f.valor_pago_centavos,
@@ -272,26 +273,6 @@ export interface ProvisaoPainel {
   reservaCompromissosId: string | null;
   resultado: ProvisaoResult;
 }
-
-const daysBetween = (fromIso: string, toIso: string): number =>
-  Math.round(
-    (new Date(`${toIso}T12:00:00Z`).getTime() - new Date(`${fromIso}T12:00:00Z`).getTime()) /
-      86_400_000,
-  );
-
-/**
- * The due date of the previous monthly cycle. Bills due on the last day of
- * the month keep that rule in the previous month (30/11 → 31/10, not 30/10).
- */
-const vencimentoCicloAnterior = (iso: string): string => {
-  const [y, m, d] = iso.split("-").map(Number);
-  const prev = new Date(Date.UTC(y, m - 2, 1));
-  const prevYm = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
-  const lastPrev = Number(monthBounds(prevYm).end.slice(8, 10));
-  const lastCur = Number(monthBounds(`${y}-${String(m).padStart(2, "0")}`).end.slice(8, 10));
-  const day = d === lastCur ? lastPrev : Math.min(d, lastPrev);
-  return `${prevYm}-${String(day).padStart(2, "0")}`;
-};
 
 /**
  * Computes the daily provision: each bucket (card invoice; other monthly
@@ -369,9 +350,7 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
 
   // Expected invoice: closed amount when the cycle is closed; otherwise the
   // larger of the reserve's meta and the running purchases total.
-  const esperadoCartao = faturaAberta
-    ? (faturaAberta.valorFechado ?? Math.max(reservaCartao?.meta ?? 0, faturaAberta.valorAtual))
-    : 0;
+  const esperadoCartao = faturaAberta?.valorEsperado ?? 0;
   const reservadoCartao = reservaCartao?.valorAtual ?? 0;
   const faltaCartao = Math.max(0, esperadoCartao - reservadoCartao);
 
@@ -380,11 +359,9 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
     .reduce((acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto), 0);
   const faltaCompromissos = Math.max(0, totalCompromissos - reservadoCompromissos);
 
-  // Provision against the closing date (fechamento), not the due date: the
-  // family wants the invoice fully funded by the time the cycle closes.
-  const diasAteFatura = faturaAberta ? Math.max(1, daysBetween(hoje, faturaAberta.fechamento)) : 1;
-  // Each monthly bill provisions valor ÷ 30 per day — a flat 30-day cycle
-  // per commitment, regardless of its due date inside the month.
+  // Both buckets provision valor ÷ 30 per day — a flat 30-day cycle per
+  // monthly obligation, regardless of its due date inside the month.
+  const diasAteFatura = 30;
   const diasAteCompromissos = 30;
 
   const resultado = provisaoDiaria({

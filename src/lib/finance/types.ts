@@ -77,6 +77,8 @@ export interface Fatura {
   vencimento: string;
   /** Running total of purchases in the cycle (before it closes). */
   valorAtual: Cents;
+  /** Expected cycle total: closed amount, else the larger of the linked reserve's meta and the running purchases. */
+  valorEsperado: Cents;
   /** The amount locked in once the cycle closes. */
   valorFechado?: Cents;
   /** Amount reserved for this invoice (may carry over between cycles). */

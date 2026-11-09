@@ -1,4 +1,6 @@
 import { SummaryCardItem } from "@/components/summary-card-item";
+import { todayISODate } from "@/lib/dates";
+import { type Compromisso, acumuladoCiclo, derivarStatus } from "@/lib/finance";
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
 import { CalendarClock, Landmark, PiggyBank, Wallet } from "lucide-react";
@@ -17,13 +19,35 @@ const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
 };
 
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, compromissos } = painel;
+  const { posicao, contas, reservas, compromissos, faturas } = painel;
   const livre = posicao.saldoLivre;
-  const totalPrevisto = compromissos.reduce(
+  const hoje = todayISODate();
+  // The card invoice is a fixed monthly bill like the others: it accrues
+  // valor ÷ 30 per day since the previous due date, capped by its reserve.
+  const itensFatura: Compromisso[] = faturas
+    .filter((f) => f.status !== "PAGA")
+    .map((f) => {
+      const total = f.valorEsperado;
+      const base: Compromisso = {
+        id: `fatura-${f.id}`,
+        nome: "Fatura do cartão",
+        valorPrevisto: total,
+        valorReservado: Math.min(acumuladoCiclo(total, f.vencimento, hoje), f.valorReservado),
+        valorPago: f.valorPago,
+        vencimento: f.vencimento,
+        prioridade: 0,
+        status: "PENDENTE",
+      };
+      return { ...base, status: derivarStatus(base, hoje) };
+    });
+  const contasFixas = [...compromissos, ...itensFatura].sort((a, b) =>
+    a.vencimento.localeCompare(b.vencimento),
+  );
+  const totalPrevisto = contasFixas.reduce(
     (acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto),
     0,
   );
-  const totalArrecadado = compromissos.reduce((acc, c) => acc + c.valorReservado + c.valorPago, 0);
+  const totalArrecadado = contasFixas.reduce((acc, c) => acc + c.valorReservado + c.valorPago, 0);
 
   return (
     <div className="space-y-6">
@@ -180,10 +204,10 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           </div>
         </div>
         <ul className="space-y-3 border-t border-slate-100 pt-3">
-          {compromissos.length === 0 && (
+          {contasFixas.length === 0 && (
             <li className="py-1 text-xs text-slate-500">Nenhuma conta fixa cadastrada.</li>
           )}
-          {compromissos.map((c) => {
+          {contasFixas.map((c) => {
             const total = c.valorEfetivo ?? c.valorPrevisto;
             const falta = Math.max(0, total - c.valorReservado - c.valorPago);
             const st = STATUS_COMPROMISSO[c.status] ?? STATUS_COMPROMISSO.PENDENTE;
@@ -220,7 +244,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             );
           })}
         </ul>
-        {compromissos.length > 0 && (
+        {contasFixas.length > 0 && (
           <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
             <span className="font-medium text-slate-500">Total do mês</span>
             <span className="tabular-nums font-bold text-slate-800">

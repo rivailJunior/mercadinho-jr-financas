@@ -1,3 +1,4 @@
+import { daysBetween, monthBounds } from "@/lib/dates";
 import type { Compromisso, CompromissoStatus } from "@/lib/finance/types";
 import { type Cents, clampNonNegative } from "@/lib/money";
 
@@ -39,6 +40,28 @@ export const derivarStatus = (c: Compromisso, hoje: string): CompromissoStatus =
   if (coberto > 0) return "PARCIALMENTE_RESERVADO";
   return "PENDENTE";
 };
+
+/**
+ * The due date of the previous monthly cycle. Bills due on the last day of
+ * the month keep that rule in the previous month (30/11 → 31/10, not 30/10).
+ */
+export const vencimentoCicloAnterior = (iso: string): string => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const prev = new Date(Date.UTC(y, m - 2, 1));
+  const prevYm = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
+  const lastPrev = Number(monthBounds(prevYm).end.slice(8, 10));
+  const lastCur = Number(monthBounds(`${y}-${String(m).padStart(2, "0")}`).end.slice(8, 10));
+  const day = d === lastCur ? lastPrev : Math.min(d, lastPrev);
+  return `${prevYm}-${String(day).padStart(2, "0")}`;
+};
+
+/**
+ * How much of a monthly bill has accrued so far in the current cycle:
+ * valor ÷ 30 × days elapsed since the previous cycle's due date. A bill
+ * paid on the 6th has accrued 2 daily installments by the 8th.
+ */
+export const acumuladoCiclo = (total: Cents, vencimento: string, hoje: string): Cents =>
+  Math.floor((total * Math.max(0, daysBetween(vencimentoCicloAnterior(vencimento), hoje))) / 30);
 
 /** Total still-to-reserve across a set of commitments. */
 export const totalFaltaReservar = (compromissos: Compromisso[]): Cents =>
