@@ -100,6 +100,7 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           destino_conta_id: string | null;
+          dia_vencimento: number | null;
           estabelecimento_id: string;
           id: string;
           nome: string;
@@ -119,6 +120,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           destino_conta_id?: string | null;
+          dia_vencimento?: number | null;
           estabelecimento_id: string;
           id?: string;
           nome: string;
@@ -138,6 +140,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           destino_conta_id?: string | null;
+          dia_vencimento?: number | null;
           estabelecimento_id?: string;
           id?: string;
           nome?: string;
@@ -157,6 +160,20 @@ export type Database = {
             columns: ["categoria_id"];
             isOneToOne: false;
             referencedRelation: "categorias";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compromissos_financeiros_destino_conta_id_fkey";
+            columns: ["destino_conta_id"];
+            isOneToOne: false;
+            referencedRelation: "contas_financeiras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "compromissos_financeiros_destino_conta_id_fkey";
+            columns: ["destino_conta_id"];
+            isOneToOne: false;
+            referencedRelation: "v_saldos_contas";
             referencedColumns: ["id"];
           },
           {
@@ -388,74 +405,9 @@ export type Database = {
           },
         ];
       };
-      lancamentos_caixa: {
-        Row: {
-          categoria_id: number | null;
-          created_at: string | null;
-          data_referencia: string;
-          descricao: string | null;
-          estabelecimento_id: string | null;
-          forma_pagamento: string | null;
-          id: string;
-          origem: string | null;
-          origem_saida: string | null;
-          sheets_row_id: string | null;
-          sincronizado_sheets: boolean | null;
-          tipo: string;
-          updated_at: string | null;
-          valor: number;
-        };
-        Insert: {
-          categoria_id?: number | null;
-          created_at?: string | null;
-          data_referencia: string;
-          descricao?: string | null;
-          estabelecimento_id?: string | null;
-          forma_pagamento?: string | null;
-          id?: string;
-          origem?: string | null;
-          origem_saida?: string | null;
-          sheets_row_id?: string | null;
-          sincronizado_sheets?: boolean | null;
-          tipo: string;
-          updated_at?: string | null;
-          valor: number;
-        };
-        Update: {
-          categoria_id?: number | null;
-          created_at?: string | null;
-          data_referencia?: string;
-          descricao?: string | null;
-          estabelecimento_id?: string | null;
-          forma_pagamento?: string | null;
-          id?: string;
-          origem?: string | null;
-          origem_saida?: string | null;
-          sheets_row_id?: string | null;
-          sincronizado_sheets?: boolean | null;
-          tipo?: string;
-          updated_at?: string | null;
-          valor?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "lancamentos_caixa_categoria_id_fkey";
-            columns: ["categoria_id"];
-            isOneToOne: false;
-            referencedRelation: "categorias";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "lancamentos_caixa_estabelecimento_id_fkey";
-            columns: ["estabelecimento_id"];
-            isOneToOne: false;
-            referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       movimentacoes_financeiras: {
         Row: {
+          afeta_saldo: boolean;
           categoria_id: number | null;
           compromisso_id: string | null;
           conta_id: string;
@@ -465,16 +417,18 @@ export type Database = {
           descricao: string | null;
           estabelecimento_id: string;
           fatura_id: string | null;
+          forma_pagamento: string | null;
           id: string;
-          lancamento_id: string | null;
           natureza: Database["public"]["Enums"]["movimento_natureza"];
           origem: string;
+          origem_saida: string | null;
           tipo: Database["public"]["Enums"]["movimento_tipo"];
           transferencia_id: string | null;
           updated_at: string;
           valor_centavos: number;
         };
         Insert: {
+          afeta_saldo?: boolean;
           categoria_id?: number | null;
           compromisso_id?: string | null;
           conta_id: string;
@@ -484,16 +438,18 @@ export type Database = {
           descricao?: string | null;
           estabelecimento_id: string;
           fatura_id?: string | null;
+          forma_pagamento?: string | null;
           id?: string;
-          lancamento_id?: string | null;
           natureza?: Database["public"]["Enums"]["movimento_natureza"];
           origem?: string;
+          origem_saida?: string | null;
           tipo: Database["public"]["Enums"]["movimento_tipo"];
           transferencia_id?: string | null;
           updated_at?: string;
           valor_centavos: number;
         };
         Update: {
+          afeta_saldo?: boolean;
           categoria_id?: number | null;
           compromisso_id?: string | null;
           conta_id?: string;
@@ -503,23 +459,17 @@ export type Database = {
           descricao?: string | null;
           estabelecimento_id?: string;
           fatura_id?: string | null;
+          forma_pagamento?: string | null;
           id?: string;
-          lancamento_id?: string | null;
           natureza?: Database["public"]["Enums"]["movimento_natureza"];
           origem?: string;
+          origem_saida?: string | null;
           tipo?: Database["public"]["Enums"]["movimento_tipo"];
           transferencia_id?: string | null;
           updated_at?: string;
           valor_centavos?: number;
         };
         Relationships: [
-          {
-            foreignKeyName: "movimentacoes_financeiras_lancamento_id_fkey";
-            columns: ["lancamento_id"];
-            isOneToOne: false;
-            referencedRelation: "lancamentos_caixa";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "movimentacoes_financeiras_categoria_id_fkey";
             columns: ["categoria_id"];
@@ -806,6 +756,32 @@ export type Database = {
           },
         ];
       };
+      usuarios_estabelecimentos: {
+        Row: {
+          created_at: string;
+          estabelecimento_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          estabelecimento_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          estabelecimento_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_estabelecimentos_estabelecimento_id_fkey";
+            columns: ["estabelecimento_id"];
+            isOneToOne: false;
+            referencedRelation: "estabelecimentos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       v_saldos_contas: {
@@ -891,6 +867,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      proximo_vencimento: {
+        Args: { p_base: string; p_dia: number };
+        Returns: string;
+      };
       retirar_reserva: {
         Args: {
           p_data_referencia?: string;
@@ -912,6 +892,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      user_manages_estabelecimento: {
+        Args: { p_estabelecimento_id: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       compromisso_periodicidade: "UNICO" | "SEMANAL" | "MENSAL" | "ANUAL";
@@ -919,9 +903,9 @@ export type Database = {
         | "PENDENTE"
         | "PARCIALMENTE_RESERVADO"
         | "RESERVADO"
-        | "PARCIALMENTE_PAGO"
         | "PAGO"
-        | "VENCIDO";
+        | "VENCIDO"
+        | "PARCIALMENTE_PAGO";
       conta_tipo: "CAIXA_FISICO" | "MAQUININHA" | "BANCO";
       fatura_status: "ABERTA" | "FECHADA" | "PARCIALMENTE_PAGA" | "PAGA" | "VENCIDA";
       movimento_natureza:
@@ -1062,9 +1046,9 @@ export const Constants = {
         "PENDENTE",
         "PARCIALMENTE_RESERVADO",
         "RESERVADO",
-        "PARCIALMENTE_PAGO",
         "PAGO",
         "VENCIDO",
+        "PARCIALMENTE_PAGO",
       ],
       conta_tipo: ["CAIXA_FISICO", "MAQUININHA", "BANCO"],
       fatura_status: ["ABERTA", "FECHADA", "PARCIALMENTE_PAGA", "PAGA", "VENCIDA"],

@@ -91,15 +91,18 @@ export const getYearlyTotals = async () => {
 export const getTodayTotals = async () => {
   const supabase = await createSupabaseClient();
   const { data } = await supabase
-    .from("lancamentos_caixa")
-    .select("tipo, valor, origem_saida")
+    .from("movimentacoes_financeiras")
+    .select("tipo, valor_centavos, origem_saida")
+    .eq("natureza", "OPERACIONAL")
+    .is("deleted_at", null)
     .eq("data_referencia", todayISODate());
 
   let entrada = 0;
   let saida = 0;
   for (const row of data ?? []) {
-    if (row.tipo === "ENTRADA") entrada += row.valor;
-    else if (row.tipo === "SAIDA" && row.origem_saida !== "SALDO_ACUMULADO") saida += row.valor;
+    if (row.tipo === "ENTRADA") entrada += row.valor_centavos;
+    else if (row.tipo === "SAIDA" && row.origem_saida !== "SALDO_ACUMULADO")
+      saida += row.valor_centavos;
   }
-  return { entrada, saida };
+  return { entrada: entrada / 100, saida: saida / 100 };
 };

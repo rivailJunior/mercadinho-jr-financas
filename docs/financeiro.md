@@ -87,12 +87,16 @@ mês seguinte, nunca uma obrigação quitada. Pagamento parcial fica
 ## Fluxo diário unificado (caixa do dia → modelo financeiro)
 
 O formulário "Anotar Caixa do Dia" (home) é a única entrada diária. Cada
-salvar grava **dois** registros do mesmo evento:
+salvar grava **um** registro em `movimentacoes_financeiras` — a tabela única
+do modelo. A antiga `lancamentos_caixa` foi consolidada nela (migrations
+`consolidate_lancamentos_*` / `drop_lancamentos_caixa`):
 
-- `lancamentos_caixa` — alimenta os relatórios/gráficos legados;
-- `movimentacoes_financeiras` — alimenta os saldos das contas em `/financas`,
-  via `lancamento_id` (FK `ON DELETE CASCADE`, migration
-  `mov_lancamento_link`), então excluir o lançamento desfaz o movimento.
+- Linhas legadas viraram movimentos `OPERACIONAL` com `afeta_saldo = false`
+  — seu dinheiro já estava contado no `saldo_inicial`, então não movem o
+  saldo, mas continuam alimentando `view_resumo_diario` e os relatórios;
+- `origem_saida` e `forma_pagamento` migraram como colunas da tabela;
+- `view_resumo_diario` lê movimentos `OPERACIONAL` (transferências e
+  liquidações nunca contam como faturamento/saída do dia).
 
 Roteamento de conta:
 

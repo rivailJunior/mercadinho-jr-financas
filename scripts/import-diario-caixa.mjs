@@ -3,14 +3,18 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 /*
- * One-time import of the "Diario Caixa" Google Sheet into lancamentos_caixa.
+ * One-time import of the "Diario Caixa" Google Sheet into
+ * movimentacoes_financeiras (historical entries on the Caixa físico account).
  *
  * - Parses the CSV (one row per day, real input = Faturamento do dia).
  * - Dedupes by business date, keeping the row with the LATEST Carimbo (submission
  *   timestamp). This resolves corrections and resubmissions.
  * - Skips days with no valid revenue (e.g. a blank/#VALUE! row).
- * - Inserts one ENTRADA per unique day, tagged origem = 'GOOGLE_SHEET'.
- * - Idempotent: before inserting, it deletes prior rows with origem='GOOGLE_SHEET'.
+ * - Inserts one ENTRADA/OPERACIONAL movement per unique day, tagged
+ *   origem = 'GOOGLE_SHEET', with afeta_saldo = false — this cash pre-dates
+ *   the accounts' opening balance and is already inside saldo_inicial.
+ * - Idempotent: before inserting, it deletes prior movements with
+ *   origem='GOOGLE_SHEET'.
  *
  * Usage:
  *   node scripts/import-diario-caixa.mjs           # dry-run (no writes)
@@ -207,9 +211,22 @@ const { data: cat } = await supabase
   .eq("nome", CATEGORIA_ENTRADA)
   .maybeSingle();
 
+const { data: conta } = await supabase
+  .from("contas_financeiras")
+  .select("id")
+  .eq("estabelecimento_id", est.id)
+  .eq("tipo", "CAIXA_FISICO")
+  .eq("ativo", true)
+  .is("deleted_at", null)
+  .maybeSingle();
+if (!conta) {
+  console.error("No CAIXA_FISICO account found for the estabelecimento.");
+  process.exit(1);
+}
+
 // idempotency: clear previously imported rows
 const { error: delErr, count: delCount } = await supabase
-  .from("lancamentos_caixa")
+  .from("movimentacoes_financeiras")
   .delete({ count: "exact" })
   .eq("origem", ORIGEM);
 if (delErr) {
@@ -220,12 +237,14 @@ console.log(`\nCleared ${delCount ?? 0} prior '${ORIGEM}' rows.`);
 
 const payload = rows.map((r) => ({
   estabelecimento_id: est.id,
+  conta_id: conta.id,
   categoria_id: cat?.id ?? null,
   data_referencia: r.dateIso,
   tipo: "ENTRADA",
-  valor: r.revenue,
+  natureza: "OPERACIONAL",
+  valor_centavos: Math.round(r.revenue * 100),
   origem: ORIGEM,
-  sincronizado_sheets: true,
+  afeta_saldo: false,
   descricao: "Faturamento do dia (importado da planilha)",
 }));
 
@@ -233,11 +252,11 @@ const CHUNK = 100;
 let inserted = 0;
 for (let i = 0; i < payload.length; i += CHUNK) {
   const slice = payload.slice(i, i + CHUNK);
-  const { error } = await supabase.from("lancamentos_caixa").insert(slice);
+  const { error } = await supabase.from("movimentacoes_financeiras").insert(slice);
   if (error) {
     console.error(`Insert failed at chunk ${i}:`, error);
     process.exit(1);
   }
   inserted += slice.length;
 }
-console.log(`Inserted ${inserted} ENTRADA rows into lancamentos_caixa.`);
+console.log(`Inserted ${inserted} ENTRADA rows into movimentacoes_financeiras.`);

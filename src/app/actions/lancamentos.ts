@@ -60,38 +60,6 @@ const getContaId = async (
   return data?.id ?? null;
 };
 
-/**
- * Mirrors the legacy lancamento into the new money model: every daily
- * entrada/saida is also a real account movement, so the account balances
- * the family sees in /financas always reflect what was recorded.
- */
-const registrarMovimentoConta = async (
-  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
-  args: {
-    estabelecimentoId: string;
-    contaTipo: z.infer<typeof contaSchema>;
-    tipo: "ENTRADA" | "SAIDA";
-    valorReais: number;
-    dataReferencia: string;
-    descricao: string;
-    lancamentoId: string;
-  },
-): Promise<{ error: string } | null> => {
-  const contaId = await getContaId(supabase, args.estabelecimentoId, args.contaTipo);
-  if (!contaId) return { error: "Conta financeira não encontrada." };
-  const { error } = await supabase.from("movimentacoes_financeiras").insert({
-    estabelecimento_id: args.estabelecimentoId,
-    conta_id: contaId,
-    lancamento_id: args.lancamentoId,
-    tipo: args.tipo,
-    natureza: "OPERACIONAL",
-    valor_centavos: reaisToCents(args.valorReais),
-    data_referencia: args.dataReferencia,
-    descricao: args.descricao,
-  });
-  return error ? { error: error.message } : null;
-};
-
 const entradaSchema = z.object({
   total: z.number().positive(),
   conta: contaSchema,
@@ -116,42 +84,26 @@ export async function saveEntrada(input: {
     getCategoriaId(supabase, CATEGORIA_ENTRADA),
   ]);
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
-  const dataReferencia = parsed.data.dataReferencia ?? todayISODate();
 
-  const { data: lancamento, error } = await supabase
-    .from("lancamentos_caixa")
-    .insert({
-      estabelecimento_id: estabelecimentoId,
-      categoria_id: categoriaId,
-      data_referencia: dataReferencia,
-      tipo: "ENTRADA",
-      valor: parsed.data.total,
-      forma_pagamento: parsed.data.formaPagamento ?? "MISTO",
-      descricao: "Entrada total do dia",
-    })
-    .select("id")
-    .single();
+  const contaId = await getContaId(supabase, estabelecimentoId, parsed.data.conta);
+  if (!contaId) return { ok: false, error: "Conta financeira não encontrada." };
 
-  if (error) return { ok: false, error: error.message };
-
-  const mov = await registrarMovimentoConta(supabase, {
-    estabelecimentoId,
-    contaTipo: parsed.data.conta,
+  const { error } = await supabase.from("movimentacoes_financeiras").insert({
+    estabelecimento_id: estabelecimentoId,
+    conta_id: contaId,
+    categoria_id: categoriaId,
     tipo: "ENTRADA",
-    valorReais: parsed.data.total,
-    dataReferencia,
+    natureza: "OPERACIONAL",
+    valor_centavos: reaisToCents(parsed.data.total),
+    data_referencia: parsed.data.dataReferencia ?? todayISODate(),
+    forma_pagamento: parsed.data.formaPagamento ?? "MISTO",
     descricao:
       parsed.data.conta === "MAQUININHA"
         ? "Entrada do dia (maquininha/Pix)"
         : "Entrada do dia (dinheiro)",
-    lancamentoId: lancamento.id,
   });
-  if (mov) {
-    // Keep the two records in sync: without the movement the account
-    // balances would silently drift, so undo the lancamento and fail loudly.
-    await supabase.from("lancamentos_caixa").delete().eq("id", lancamento.id);
-    return { ok: false, error: mov.error };
-  }
+
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 
@@ -179,39 +131,25 @@ export async function saveSaida(input: {
     getCategoriaId(supabase, CATEGORIA_SAIDA),
   ]);
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
-  const dataReferencia = parsed.data.dataReferencia ?? todayISODate();
-
-  const { data: lancamento, error } = await supabase
-    .from("lancamentos_caixa")
-    .insert({
-      estabelecimento_id: estabelecimentoId,
-      categoria_id: categoriaId,
-      data_referencia: dataReferencia,
-      tipo: "SAIDA",
-      valor: parsed.data.valor,
-      origem_saida: parsed.data.origem,
-      descricao: parsed.data.descricao?.trim() || "Despesa avulsa",
-    })
-    .select("id")
-    .single();
-
-  if (error) return { ok: false, error: error.message };
 
   // O dinheiro sai fisicamente da gaveta nas duas origens; o que muda é só
   // se o gasto desconta a entrada do dia ou o saldo acumulado.
-  const mov = await registrarMovimentoConta(supabase, {
-    estabelecimentoId,
-    contaTipo: "CAIXA_FISICO",
+  const contaId = await getContaId(supabase, estabelecimentoId, "CAIXA_FISICO");
+  if (!contaId) return { ok: false, error: "Conta financeira não encontrada." };
+
+  const { error } = await supabase.from("movimentacoes_financeiras").insert({
+    estabelecimento_id: estabelecimentoId,
+    conta_id: contaId,
+    categoria_id: categoriaId,
     tipo: "SAIDA",
-    valorReais: parsed.data.valor,
-    dataReferencia,
+    natureza: "OPERACIONAL",
+    valor_centavos: reaisToCents(parsed.data.valor),
+    data_referencia: parsed.data.dataReferencia ?? todayISODate(),
+    origem_saida: parsed.data.origem,
     descricao: parsed.data.descricao?.trim() || "Despesa avulsa",
-    lancamentoId: lancamento.id,
   });
-  if (mov) {
-    await supabase.from("lancamentos_caixa").delete().eq("id", lancamento.id);
-    return { ok: false, error: mov.error };
-  }
+
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 
@@ -226,9 +164,10 @@ export async function deleteLancamento(input: { id: string }): Promise<SaveResul
   }
 
   const supabase = await createSupabaseClient();
-  // movimentacoes_financeiras.lancamento_id is ON DELETE CASCADE, so the
-  // mirrored account movement is removed together with the lancamento.
-  const { error } = await supabase.from("lancamentos_caixa").delete().eq("id", parsed.data.id);
+  const { error } = await supabase
+    .from("movimentacoes_financeiras")
+    .delete()
+    .eq("id", parsed.data.id);
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -259,36 +198,23 @@ export async function saveRetroativo(input: {
 
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
 
-  const { data: lancamento, error } = await supabase
-    .from("lancamentos_caixa")
-    .insert({
-      estabelecimento_id: estabelecimentoId,
-      categoria_id: categoriaId,
-      data_referencia: parsed.data.data,
-      tipo: parsed.data.tipo,
-      valor: parsed.data.valor,
-      origem_saida: parsed.data.tipo === "SAIDA" ? "ENTRADA_DIA" : null,
-      descricao: "Lancamento retroativo",
-    })
-    .select("id")
-    .single();
+  // Retroactive entries assume the physical drawer — that is where missed
+  // daily cash belongs.
+  const contaId = await getContaId(supabase, estabelecimentoId, "CAIXA_FISICO");
+  if (!contaId) return { ok: false, error: "Conta financeira não encontrada." };
+
+  const { error } = await supabase.from("movimentacoes_financeiras").insert({
+    estabelecimento_id: estabelecimentoId,
+    conta_id: contaId,
+    categoria_id: categoriaId,
+    tipo: parsed.data.tipo,
+    natureza: "OPERACIONAL",
+    valor_centavos: reaisToCents(parsed.data.valor),
+    data_referencia: parsed.data.data,
+    origem_saida: parsed.data.tipo === "SAIDA" ? "ENTRADA_DIA" : null,
+    descricao: "Lancamento retroativo",
+  });
 
   if (error) return { ok: false, error: error.message };
-
-  // Retroactive entries assume the physical drawer — that is where missed
-  // daily cash belongs — and stay linked via lancamento_id for rollback.
-  const mov = await registrarMovimentoConta(supabase, {
-    estabelecimentoId,
-    contaTipo: "CAIXA_FISICO",
-    tipo: parsed.data.tipo,
-    valorReais: parsed.data.valor,
-    dataReferencia: parsed.data.data,
-    descricao: "Lancamento retroativo",
-    lancamentoId: lancamento.id,
-  });
-  if (mov) {
-    await supabase.from("lancamentos_caixa").delete().eq("id", lancamento.id);
-    return { ok: false, error: mov.error };
-  }
   return { ok: true };
 }

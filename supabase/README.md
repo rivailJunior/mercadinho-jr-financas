@@ -17,6 +17,11 @@ Este diretório versiona o schema do banco (projeto `vizyhhyugnufyijtwmyj`).
 - `migrations/20261108180000_financial_rls_open_policies.sql` adiciona políticas
   permissivas (equivalente à postura aberta atual do app) nas tabelas novas,
   para uso end-to-end antes do endurecimento com Auth.
+- `migrations/2026111101*_consolidate_lancamentos_into_movimentos.sql` e
+  `2026111102*_drop_lancamentos_caixa.sql` consolidam a tabela legada
+  `lancamentos_caixa` em `movimentacoes_financeiras` (histórico como movimentos
+  `OPERACIONAL` com `afeta_saldo = false`) e a removem — uma única tabela de
+  movimentos alimenta saldos e relatórios.
 
 ## Fluxo recomendado (quando o Supabase CLI estiver funcional nesta máquina)
 
@@ -35,7 +40,8 @@ supabase db push
 
 ## Segurança pendente (requer decisão/Auth)
 
-As 5 tabelas legadas (`estabelecimentos`, `categorias`, `lancamentos_caixa`,
+As 4 tabelas legadas (`estabelecimentos`, `categorias`,
 `custos_fixos_config`, `config_financeira`) ainda estão com **RLS desabilitado**.
 Habilitar RLS + políticas junto com Supabase Auth é o passo de cutover,
-tratado em migration separada após aprovação.
+tratado em migration separada após aprovação. (`lancamentos_caixa` foi
+consolidada em `movimentacoes_financeiras` e removida.)

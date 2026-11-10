@@ -330,7 +330,7 @@ export const getProvisaoDiaria = async (
   const [
     { data: faturaRow },
     { data: compromissoLinks },
-    { data: lancamentosHoje },
+    { data: movimentosHoje },
     { data: aportesHoje },
   ] = await Promise.all([
     faturaAberta
@@ -342,9 +342,11 @@ export const getProvisaoDiaria = async (
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
     supabase
-      .from("lancamentos_caixa")
-      .select("tipo, valor")
+      .from("movimentacoes_financeiras")
+      .select("tipo, valor_centavos")
       .eq("estabelecimento_id", estabelecimentoId)
+      .eq("natureza", "OPERACIONAL")
+      .is("deleted_at", null)
       .eq("data_referencia", hoje),
     supabase
       .from("movimentacoes_reservas")
@@ -364,14 +366,12 @@ export const getProvisaoDiaria = async (
     0,
   );
 
-  // Today's net profit (entradas − saídas) drives the suggestion; it is
-  // offered once per day, so any aporte into the fixed-bill reserves today
-  // locks the button until tomorrow.
-  const lucroDia = Math.round(
-    (lancamentosHoje ?? []).reduce(
-      (acc, l) => acc + (l.tipo === "ENTRADA" ? (l.valor ?? 0) : -(l.valor ?? 0)),
-      0,
-    ) * 100,
+  // Today's net profit (entradas − saídas, in cents) drives the suggestion;
+  // it is offered once per day, so any aporte into the fixed-bill reserves
+  // today locks the button until tomorrow.
+  const lucroDia = (movimentosHoje ?? []).reduce(
+    (acc, m) => acc + (m.tipo === "ENTRADA" ? (m.valor_centavos ?? 0) : -(m.valor_centavos ?? 0)),
+    0,
   );
   const reservasFixasIds = new Set<string>([
     ...reservaCompromissosIds,
