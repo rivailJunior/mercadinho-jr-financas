@@ -47,6 +47,9 @@ export type LancamentoTipo = "ENTRADA" | "SAIDA";
 
 export type LancamentoFilter = "all" | LancamentoTipo;
 
+/** De onde o dinheiro de uma saída foi retirado. */
+export type SaidaOrigem = "ENTRADA_DIA" | "SALDO_ACUMULADO";
+
 export interface Lancamento {
   id: string;
   tipo: LancamentoTipo;
@@ -54,6 +57,8 @@ export interface Lancamento {
   valor: number;
   /** YYYY-MM-DD */
   dataReferencia: string;
+  /** Presente apenas em saídas: entrada do dia ou saldo acumulado. */
+  origemSaida?: SaidaOrigem | null;
 }
 
 export interface MonthlyReportSummary {

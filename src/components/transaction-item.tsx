@@ -50,6 +50,11 @@ export const TransactionItem = ({ lancamento, onDelete }: TransactionItemProps) 
             <span className="text-xs font-medium text-slate-400">
               {formatLancamentoDate(lancamento.dataReferencia)}
             </span>
+            {lancamento.origemSaida === "SALDO_ACUMULADO" && (
+              <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                do saldo
+              </span>
+            )}
           </div>
           <div className="mt-1">
             <span

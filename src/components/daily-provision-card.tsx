@@ -33,10 +33,11 @@ export const DailyProvisionCard = ({ provisao }: DailyProvisionCardProps) => {
       </div>
 
       <div
-        className={`flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-extrabold text-white shadow-button-tap ${jaGuardou
+        className={`flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-extrabold text-white shadow-button-tap ${
+          jaGuardou
             ? "bg-linear-to-r from-emerald-500 to-emerald-600"
             : "bg-linear-to-r from-blue-500 to-blue-600"
-          }`}
+        }`}
       >
         <CheckCircle className="h-5 w-5" />
         {jaGuardou

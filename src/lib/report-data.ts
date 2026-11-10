@@ -12,7 +12,7 @@ export const getMonthlyReport = async (mes: string): Promise<MonthlyReport> => {
   const [{ data: lancamentos }, { data: resumo }] = await Promise.all([
     supabase
       .from("lancamentos_caixa")
-      .select("id, tipo, valor, descricao, data_referencia")
+      .select("id, tipo, valor, descricao, data_referencia, origem_saida")
       .gte("data_referencia", start)
       .lte("data_referencia", end)
       .order("data_referencia", { ascending: false })
@@ -42,6 +42,12 @@ export const getMonthlyReport = async (mes: string): Promise<MonthlyReport> => {
       l.descricao?.trim() || (l.tipo === "ENTRADA" ? "Entrada no caixa" : "Saída no caixa"),
     valor: l.valor,
     dataReferencia: l.data_referencia,
+    origemSaida:
+      l.origem_saida === "SALDO_ACUMULADO"
+        ? "SALDO_ACUMULADO"
+        : l.tipo === "SAIDA"
+          ? "ENTRADA_DIA"
+          : null,
   }));
 
   return {

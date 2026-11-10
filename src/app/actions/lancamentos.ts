@@ -158,14 +158,14 @@ export async function saveEntrada(input: {
 const saidaSchema = z.object({
   valor: z.number().positive(),
   descricao: z.string().optional(),
-  conta: contaSchema,
+  origem: z.enum(["ENTRADA_DIA", "SALDO_ACUMULADO"]),
   dataReferencia: z.string().optional(),
 });
 
 export async function saveSaida(input: {
   valor: number;
   descricao?: string;
-  conta: "CAIXA_FISICO" | "MAQUININHA";
+  origem: "ENTRADA_DIA" | "SALDO_ACUMULADO";
   dataReferencia?: string;
 }): Promise<SaveResult> {
   const parsed = saidaSchema.safeParse(input);
@@ -189,6 +189,7 @@ export async function saveSaida(input: {
       data_referencia: dataReferencia,
       tipo: "SAIDA",
       valor: parsed.data.valor,
+      origem_saida: parsed.data.origem,
       descricao: parsed.data.descricao?.trim() || "Despesa avulsa",
     })
     .select("id")
@@ -196,9 +197,11 @@ export async function saveSaida(input: {
 
   if (error) return { ok: false, error: error.message };
 
+  // O dinheiro sai fisicamente da gaveta nas duas origens; o que muda é só
+  // se o gasto desconta a entrada do dia ou o saldo acumulado.
   const mov = await registrarMovimentoConta(supabase, {
     estabelecimentoId,
-    contaTipo: parsed.data.conta,
+    contaTipo: "CAIXA_FISICO",
     tipo: "SAIDA",
     valorReais: parsed.data.valor,
     dataReferencia,
@@ -264,6 +267,7 @@ export async function saveRetroativo(input: {
       data_referencia: parsed.data.data,
       tipo: parsed.data.tipo,
       valor: parsed.data.valor,
+      origem_saida: parsed.data.tipo === "SAIDA" ? "ENTRADA_DIA" : null,
       descricao: "Lancamento retroativo",
     })
     .select("id")

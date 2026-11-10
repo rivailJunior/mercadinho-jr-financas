@@ -6,7 +6,7 @@ import { DailySummaryCard } from "@/components/daily-summary-card";
 import { GreetingHeader } from "@/components/greeting-header";
 import { RetroactiveEntryCard } from "@/components/retroactive-entry-card";
 import { Toast, type ToastMessage } from "@/components/toast";
-import type { CashEntry, DailySummary } from "@/types/cashClosing";
+import type { CashEntry, DailySummary, SaidaOrigem } from "@/types/cashClosing";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -25,7 +25,7 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
   const [expenseValue, setExpenseValue] = useState(0);
   const [expenseDescription, setExpenseDescription] = useState("");
   const [entradaConta, setEntradaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
-  const [saidaConta, setSaidaConta] = useState<"CAIXA_FISICO" | "MAQUININHA">("CAIXA_FISICO");
+  const [saidaOrigem, setSaidaOrigem] = useState<SaidaOrigem>("ENTRADA_DIA");
   const [retroactiveOpen, setRetroactiveOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<(ToastMessage & { id: number }) | null>(null);
@@ -63,7 +63,7 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
       const result = await saveSaida({
         valor: expenseValue,
         descricao: expenseDescription,
-        conta: saidaConta,
+        origem: saidaOrigem,
       });
       if (result.ok) {
         setExpenseValue(0);
@@ -80,12 +80,13 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
     } finally {
       setIsSaving(false);
     }
-  }, [expenseValue, expenseDescription, saidaConta, router]);
+  }, [expenseValue, expenseDescription, saidaOrigem, router]);
 
   const summary: DailySummary = useMemo(() => {
     const totalEntradas =
       initialEntrada + cashEntry.dinheiroGaveta + cashEntry.cartao + cashEntry.pix;
-    const totalSaidas = initialSaida + expenseValue;
+    // Saídas pagas com o saldo acumulado não descontam a sobra do dia.
+    const totalSaidas = initialSaida + (saidaOrigem === "ENTRADA_DIA" ? expenseValue : 0);
     const sobraLimpa = totalEntradas - totalSaidas;
 
     return {
@@ -93,7 +94,7 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
       totalSaidas,
       sobraLimpa: Math.round(sobraLimpa * 100) / 100,
     };
-  }, [initialEntrada, initialSaida, cashEntry, expenseValue]);
+  }, [initialEntrada, initialSaida, cashEntry, expenseValue, saidaOrigem]);
 
   return (
     <>
@@ -111,8 +112,8 @@ export const FechamentoCaixaForm = ({ initialEntrada, initialSaida }: Fechamento
           onExpenseDescriptionChange={setExpenseDescription}
           entradaConta={entradaConta}
           onEntradaContaChange={setEntradaConta}
-          saidaConta={saidaConta}
-          onSaidaContaChange={setSaidaConta}
+          saidaOrigem={saidaOrigem}
+          onSaidaOrigemChange={setSaidaOrigem}
           onSaveEntrada={handleSaveEntrada}
           onSaveSaida={handleSaveSaida}
           isSaving={isSaving}

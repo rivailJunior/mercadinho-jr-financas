@@ -92,14 +92,14 @@ export const getTodayTotals = async () => {
   const supabase = await createSupabaseClient();
   const { data } = await supabase
     .from("lancamentos_caixa")
-    .select("tipo, valor")
+    .select("tipo, valor, origem_saida")
     .eq("data_referencia", todayISODate());
 
   let entrada = 0;
   let saida = 0;
   for (const row of data ?? []) {
     if (row.tipo === "ENTRADA") entrada += row.valor;
-    else if (row.tipo === "SAIDA") saida += row.valor;
+    else if (row.tipo === "SAIDA" && row.origem_saida !== "SALDO_ACUMULADO") saida += row.valor;
   }
   return { entrada, saida };
 };

@@ -3,7 +3,7 @@
 import { CurrencyInput } from "@/components/currency-input";
 import { formatShortISODate, todayISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import type { CashEntry } from "@/types/cashClosing";
+import type { CashEntry, SaidaOrigem } from "@/types/cashClosing";
 import { CheckCircle, Mic } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -23,6 +23,11 @@ const CONTA_OPCOES: { id: ContaOpcao; label: string }[] = [
   { id: "MAQUININHA", label: "Maquininha / Pix" },
 ];
 
+const SAIDA_ORIGEM_OPCOES: { id: SaidaOrigem; label: string }[] = [
+  { id: "ENTRADA_DIA", label: "Entrada do dia" },
+  { id: "SALDO_ACUMULADO", label: "Saldo acumulado" },
+];
+
 interface CashEntryCardProps {
   cashValues: CashEntry;
   onCashChange: (values: CashEntry) => void;
@@ -32,22 +37,28 @@ interface CashEntryCardProps {
   onExpenseDescriptionChange: (description: string) => void;
   entradaConta: ContaOpcao;
   onEntradaContaChange: (conta: ContaOpcao) => void;
-  saidaConta: ContaOpcao;
-  onSaidaContaChange: (conta: ContaOpcao) => void;
+  saidaOrigem: SaidaOrigem;
+  onSaidaOrigemChange: (origem: SaidaOrigem) => void;
   onSaveEntrada: () => void;
   onSaveSaida: () => void;
   isSaving: boolean;
 }
 
-const ContaSelector = ({
+const ContaSelector = <T extends string>({
   label,
+  options,
   value,
   onChange,
-}: { label: string; value: ContaOpcao; onChange: (c: ContaOpcao) => void }) => (
+}: {
+  label: string;
+  options: { id: T; label: string }[];
+  value: T;
+  onChange: (c: T) => void;
+}) => (
   <div className="space-y-1.5">
     <span className="block text-xs font-bold uppercase tracking-wide text-slate-600">{label}</span>
     <div className="grid grid-cols-2 gap-2">
-      {CONTA_OPCOES.map((op) => (
+      {options.map((op) => (
         <button
           key={op.id}
           type="button"
@@ -74,8 +85,8 @@ export const CashEntryCard = ({
   onExpenseDescriptionChange,
   entradaConta,
   onEntradaContaChange,
-  saidaConta,
-  onSaidaContaChange,
+  saidaOrigem,
+  onSaidaOrigemChange,
   onSaveEntrada,
   onSaveSaida,
   isSaving,
@@ -168,6 +179,7 @@ export const CashEntryCard = ({
 
           <ContaSelector
             label="Onde entrou?"
+            options={CONTA_OPCOES}
             value={entradaConta}
             onChange={onEntradaContaChange}
           />
@@ -210,7 +222,12 @@ export const CashEntryCard = ({
             placeholder="0,00"
           />
 
-          <ContaSelector label="De onde saiu?" value={saidaConta} onChange={onSaidaContaChange} />
+          <ContaSelector
+            label="De onde saiu?"
+            options={SAIDA_ORIGEM_OPCOES}
+            value={saidaOrigem}
+            onChange={onSaidaOrigemChange}
+          />
 
           <div className="space-y-1.5">
             <label
@@ -252,7 +269,9 @@ export const CashEntryCard = ({
               {isSaving ? "Salvando..." : "Salvar Saída do Caixa (-)"}
             </button>
             <p className="mt-2 text-center text-xs font-medium text-slate-400">
-              Deduz automaticamente da sobra limpa do dia.
+              {saidaOrigem === "SALDO_ACUMULADO"
+                ? "Sai do saldo acumulado — não altera a sobra do dia."
+                : "Deduz automaticamente da sobra limpa do dia."}
             </p>
           </div>
         </div>

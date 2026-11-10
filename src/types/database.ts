@@ -398,6 +398,7 @@ export type Database = {
           forma_pagamento: string | null;
           id: string;
           origem: string | null;
+          origem_saida: string | null;
           sheets_row_id: string | null;
           sincronizado_sheets: boolean | null;
           tipo: string;
@@ -413,6 +414,7 @@ export type Database = {
           forma_pagamento?: string | null;
           id?: string;
           origem?: string | null;
+          origem_saida?: string | null;
           sheets_row_id?: string | null;
           sincronizado_sheets?: boolean | null;
           tipo: string;
@@ -428,6 +430,7 @@ export type Database = {
           forma_pagamento?: string | null;
           id?: string;
           origem?: string | null;
+          origem_saida?: string | null;
           sheets_row_id?: string | null;
           sincronizado_sheets?: boolean | null;
           tipo?: string;
