@@ -1,16 +1,18 @@
 import {
   BottomNav,
+  DailyProvisionCard,
   FinancialActions,
   FinancialDashboard,
   GreetingHeader,
   ReserveMovementsCard,
 } from "@/components";
-import { getPainelFinanceiro } from "@/lib/finance/data";
+import { getPainelFinanceiro, getProvisaoDiaria } from "@/lib/finance/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinancasPage() {
   const painel = await getPainelFinanceiro();
+  const provisao = painel ? await getProvisaoDiaria(painel) : null;
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-app-bg pb-24 shadow-2xl">
@@ -20,6 +22,7 @@ export default async function FinancasPage() {
         {painel ? (
           <>
             <FinancialDashboard painel={painel} />
+            {provisao && <DailyProvisionCard provisao={provisao} />}
             <FinancialActions
               contas={painel.contas}
               reservas={painel.reservas}

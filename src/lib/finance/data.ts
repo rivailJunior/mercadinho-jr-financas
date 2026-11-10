@@ -30,6 +30,8 @@ export interface PainelFinanceiro {
   compromissos: Compromisso[];
   faturas: Fatura[];
   movimentosReserva: MovimentoReserva[];
+  /** Money in the fixed-bill reserves beyond the accrued daily rhythm. */
+  adiantadoFixas: Cents;
 }
 
 /** Resolves the default establishment id (single-store app). */
@@ -144,18 +146,14 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     prioridade: r.prioridade,
   }));
 
-  // Each reserve's balance is spread across the commitments linked to it,
-  // in proportion to what each one still owes — so every item shows its own
-  // covered share instead of a flat "pendente" on everything.
+  // Each reserve's balance is spread across the obligations linked to it —
+  // commitments and the open card invoice — in proportion to what each one
+  // should have accumulated by today (valor ÷ 30 per day since the previous
+  // due date). An aporte into the reserve immediately raises each share, up
+  // to that daily-rhythm target.
   type CompromissoRow = NonNullable<typeof compromissosRows>[number];
+  type FaturaRow = NonNullable<typeof faturasRows>[number];
   const reservaSaldo = new Map(reservas.map((r) => [r.id, r.valorAtual]));
-  const porReserva = new Map<string, CompromissoRow[]>();
-  for (const row of compromissosRows ?? []) {
-    if (row.status === "PAGO" || row.reserva_id == null) continue;
-    const list = porReserva.get(row.reserva_id) ?? [];
-    list.push(row);
-    porReserva.set(row.reserva_id, list);
-  }
   const hoje = todayISODate();
   const fimMes = monthBounds(hoje.slice(0, 7)).end;
 
@@ -164,32 +162,65 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       0,
       (r.valor_efetivo_centavos ?? r.valor_previsto_centavos) - (r.valor_pago_centavos ?? 0),
     );
+  const cicloAbertoDe = (f: FaturaRow): Cents =>
+    (f.compras_cartao ?? []).reduce((acc, c) => acc + (c.valor_centavos ?? 0), 0);
+  const metaReservaDe = (f: FaturaRow): Cents =>
+    reservas.find((r) => r.id === f.reserva_id)?.meta ?? 0;
   // Each bill accrues its daily rate (valor ÷ 30) per day elapsed in the
   // current cycle — i.e. since the day after the previous due date. A bill
-  // paid on the 6th has accrued 2 daily installments by the 8th.
-  const acumuladoDe = (r: CompromissoRow): Cents => {
+  // due on the 6th has accrued 3 daily installments on the 9th.
+  const acumuladoCompromisso = (r: CompromissoRow): Cents => {
     const total = r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
     return Math.min(pendenteDe(r), acumuladoCiclo(total, r.vencimento ?? fimMes, hoje));
   };
-  const reservadoPorCompromisso = new Map<string, Cents>();
+  const acumuladoFatura = (f: FaturaRow): Cents => {
+    const esperado = f.valor_fechado_centavos ?? Math.max(metaReservaDe(f), cicloAbertoDe(f));
+    const pendente = Math.max(0, esperado - (f.valor_pago_centavos ?? 0));
+    return Math.min(pendente, acumuladoCiclo(esperado, f.vencimento, hoje));
+  };
+
+  interface Obrigacao {
+    key: string;
+    alvo: Cents;
+  }
+  const porReserva = new Map<string, Obrigacao[]>();
+  const addObrigacao = (reservaId: string | null, o: Obrigacao) => {
+    if (reservaId == null || o.alvo <= 0) return;
+    const list = porReserva.get(reservaId) ?? [];
+    list.push(o);
+    porReserva.set(reservaId, list);
+  };
+  for (const row of compromissosRows ?? []) {
+    if (row.status === "PAGO") continue;
+    addObrigacao(row.reserva_id, { key: `comp:${row.id}`, alvo: acumuladoCompromisso(row) });
+  }
+  for (const f of faturasRows ?? []) {
+    if (f.status === "PAGA" || f.status === "VENCIDA") continue;
+    addObrigacao(f.reserva_id, { key: `fatura:${f.id}`, alvo: acumuladoFatura(f) });
+  }
+
+  const reservadoPorObrigacao = new Map<string, Cents>();
+  // Whatever a linked reserve holds beyond the accrued targets stays
+  // unallocated — it is money saved ahead of the daily rhythm.
+  let adiantadoFixas = 0;
   for (const [reservaId, rows] of porReserva) {
     const saldo = reservaSaldo.get(reservaId) ?? 0;
     if (saldo <= 0) continue;
-    const acumulados = rows.map(acumuladoDe);
-    const totalAcumulado = acumulados.reduce((acc, v) => acc + v, 0);
-    if (totalAcumulado <= 0) continue;
-    // The reserve covers what has accrued so far; when it falls short the
-    // balance splits proportionally to each bill's accrued share.
-    const escala = Math.min(1, saldo / totalAcumulado);
+    const totalAlvo = rows.reduce((acc, o) => acc + o.alvo, 0);
+    if (totalAlvo <= 0) continue;
+    // The reserve covers what should have accrued so far; when it falls
+    // short the balance splits proportionally to each obligation's share.
+    const escala = Math.min(1, saldo / totalAlvo);
     let restante = saldo;
-    rows.forEach((r, i) => {
+    rows.forEach((o, i) => {
       const share =
         i === rows.length - 1
-          ? Math.min(acumulados[i], restante)
-          : Math.min(acumulados[i], Math.floor(acumulados[i] * escala));
+          ? Math.min(o.alvo, restante)
+          : Math.min(o.alvo, Math.floor(o.alvo * escala));
       restante -= share;
-      reservadoPorCompromisso.set(r.id, share);
+      reservadoPorObrigacao.set(o.key, share);
     });
+    adiantadoFixas += Math.max(0, restante);
   }
 
   const compromissos: Compromisso[] = (compromissosRows ?? []).map((c) => {
@@ -198,7 +229,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       nome: c.nome,
       valorPrevisto: c.valor_previsto_centavos,
       valorEfetivo: c.valor_efetivo_centavos ?? undefined,
-      valorReservado: reservadoPorCompromisso.get(c.id) ?? 0,
+      valorReservado: reservadoPorObrigacao.get(`comp:${c.id}`) ?? 0,
       valorPago: c.valor_pago_centavos ?? 0,
       // Monthly bills without a concrete due date are paid at month-end —
       // a null vencimento must never read as an already-past date.
@@ -212,11 +243,8 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   const faturas: Fatura[] = (faturasRows ?? []).map((f) => {
     // Open cycles have no closed amount yet — the running total is the sum of
     // the card purchases registered in the cycle.
-    const cicloAberto = (f.compras_cartao ?? []).reduce(
-      (acc, c) => acc + (c.valor_centavos ?? 0),
-      0,
-    );
-    const metaReserva = reservas.find((r) => r.id === f.reserva_id)?.meta ?? 0;
+    const cicloAberto = cicloAbertoDe(f);
+    const metaReserva = metaReservaDe(f);
     return {
       id: f.id,
       fechamento: f.fechamento,
@@ -224,7 +252,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       valorAtual: f.valor_fechado_centavos ?? cicloAberto,
       valorEsperado: f.valor_fechado_centavos ?? Math.max(metaReserva, cicloAberto),
       valorFechado: f.valor_fechado_centavos ?? undefined,
-      valorReservado: f.valor_reservado_centavos,
+      valorReservado: reservadoPorObrigacao.get(`fatura:${f.id}`) ?? 0,
       valorPago: f.valor_pago_centavos,
       status: f.status,
     };
@@ -250,6 +278,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     compromissos,
     faturas,
     movimentosReserva,
+    adiantadoFixas,
   };
 };
 
@@ -267,6 +296,8 @@ export interface ProvisaoPainel {
   lucroDia: Cents;
   /** Today's provision already ran — no second aporte today. */
   jaGuardouHoje: boolean;
+  /** Total already provisioned today into the fixed-bill reserves, in cents. */
+  guardadoHoje: Cents;
   diasAteFatura: number;
   diasAteCompromissos: number;
   reservaCartaoId: string | null;
@@ -279,8 +310,10 @@ export interface ProvisaoPainel {
  * bills) needs falta ÷ diasRestantes, capped by the day's profit. The card
  * bucket is funded first because its deadline is nearest.
  */
-export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
-  const painel = await getPainelFinanceiro();
+export const getProvisaoDiaria = async (
+  painelParam?: PainelFinanceiro | null,
+): Promise<ProvisaoPainel | null> => {
+  const painel = painelParam === undefined ? await getPainelFinanceiro() : painelParam;
   if (!painel) return null;
 
   const supabase = await createSupabaseClient();
@@ -315,7 +348,7 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
       .eq("data_referencia", hoje),
     supabase
       .from("movimentacoes_reservas")
-      .select("reserva_id")
+      .select("reserva_id, valor_centavos")
       .eq("estabelecimento_id", estabelecimentoId)
       .eq("tipo", "APORTE")
       .eq("data_referencia", hoje),
@@ -344,9 +377,11 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
     ...reservaCompromissosIds,
     ...(reservaCartao ? [reservaCartao.id] : []),
   ]);
-  const jaGuardouHoje = (aportesHoje ?? []).some(
+  const aportesFixasHoje = (aportesHoje ?? []).filter(
     (m) => m.reserva_id != null && reservasFixasIds.has(m.reserva_id),
   );
+  const jaGuardouHoje = aportesFixasHoje.length > 0;
+  const guardadoHoje = aportesFixasHoje.reduce((acc, m) => acc + (m.valor_centavos ?? 0), 0);
 
   // Expected invoice: closed amount when the cycle is closed; otherwise the
   // larger of the reserve's meta and the running purchases total.
@@ -384,6 +419,7 @@ export const getProvisaoDiaria = async (): Promise<ProvisaoPainel | null> => {
     saldoLivre: painel.posicao.saldoLivre,
     lucroDia,
     jaGuardouHoje,
+    guardadoHoje,
     diasAteFatura,
     diasAteCompromissos,
     reservaCartaoId: reservaCartao?.id ?? null,

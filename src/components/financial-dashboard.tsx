@@ -1,6 +1,6 @@
 import { SummaryCardItem } from "@/components/summary-card-item";
 import { todayISODate } from "@/lib/dates";
-import { type Compromisso, acumuladoCiclo, derivarStatus } from "@/lib/finance";
+import { type Compromisso, derivarStatus } from "@/lib/finance";
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
 import { CalendarClock, Landmark, PiggyBank, Wallet } from "lucide-react";
@@ -19,11 +19,14 @@ const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
 };
 
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, compromissos, faturas } = painel;
+  const { posicao, contas, reservas, compromissos, faturas, adiantadoFixas } = painel;
+  // Reserves with nothing saved and no linked obligation have nothing to
+  // show — hide them so the "Adiantado" line can take their place.
+  const reservasVisiveis = reservas.filter((r) => r.valorAtual > 0 || r.metaEfetiva != null);
   const livre = posicao.saldoLivre;
   const hoje = todayISODate();
-  // The card invoice is a fixed monthly bill like the others: it accrues
-  // valor ÷ 30 per day since the previous due date, capped by its reserve.
+  // The card invoice is a fixed monthly bill like the others: its reserved
+  // amount comes from the linked reserve's balance, capped by what it owes.
   const itensFatura: Compromisso[] = faturas
     .filter((f) => f.status !== "PAGA")
     .map((f) => {
@@ -32,7 +35,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
         id: `fatura-${f.id}`,
         nome: "Fatura do cartão",
         valorPrevisto: total,
-        valorReservado: Math.min(acumuladoCiclo(total, f.vencimento, hoje), f.valorReservado),
+        valorReservado: f.valorReservado,
         valorPago: f.valorPago,
         vencimento: f.vencimento,
         prioridade: 0,
@@ -141,10 +144,10 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           </h3>
         </div>
         <ul className="space-y-3 border-t border-slate-100 pt-3">
-          {reservas.length === 0 && (
+          {reservasVisiveis.length === 0 && adiantadoFixas <= 0 && (
             <li className="py-1 text-xs text-slate-500">Nenhuma reserva configurada.</li>
           )}
-          {reservas.map((r) => {
+          {reservasVisiveis.map((r) => {
             const falta = r.metaEfetiva != null ? Math.max(0, r.metaEfetiva - r.valorAtual) : null;
             const progresso =
               r.metaEfetiva && r.metaEfetiva > 0 ? Math.min(1, r.valorAtual / r.metaEfetiva) : null;
@@ -178,6 +181,19 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
               </li>
             );
           })}
+          {adiantadoFixas > 0 && (
+            <li className="text-xs">
+              <div className="flex items-center justify-between py-0.5">
+                <span className="font-medium text-slate-600">Adiantado</span>
+                <span className="tabular-nums font-bold text-slate-800">
+                  {formatCents(adiantadoFixas)}
+                </span>
+              </div>
+              <span className="mt-0.5 block text-[11px] text-slate-400">
+                Guardado além do ritmo diário — pode cobrir qualquer conta fixa abaixo
+              </span>
+            </li>
+          )}
         </ul>
       </section>
 
