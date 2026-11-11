@@ -283,47 +283,6 @@ export type Database = {
           },
         ];
       };
-      custos_fixos_config: {
-        Row: {
-          ativo: boolean | null;
-          estabelecimento_id: string | null;
-          id: number;
-          mes_ano_vigencia: string;
-          nome: string;
-          percentual_sugerido: number | null;
-          tipo_custo: string;
-          valor_mensal: number | null;
-        };
-        Insert: {
-          ativo?: boolean | null;
-          estabelecimento_id?: string | null;
-          id?: number;
-          mes_ano_vigencia: string;
-          nome: string;
-          percentual_sugerido?: number | null;
-          tipo_custo: string;
-          valor_mensal?: number | null;
-        };
-        Update: {
-          ativo?: boolean | null;
-          estabelecimento_id?: string | null;
-          id?: number;
-          mes_ano_vigencia?: string;
-          nome?: string;
-          percentual_sugerido?: number | null;
-          tipo_custo?: string;
-          valor_mensal?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "custos_fixos_config_estabelecimento_id_fkey";
-            columns: ["estabelecimento_id"];
-            isOneToOne: false;
-            referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       estabelecimentos: {
         Row: {
           created_at: string | null;
@@ -575,61 +534,6 @@ export type Database = {
             columns: ["reserva_id"];
             isOneToOne: false;
             referencedRelation: "reservas_financeiras";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      pagamentos_compromissos: {
-        Row: {
-          compromisso_id: string;
-          created_at: string;
-          data_pagamento: string;
-          descricao: string | null;
-          estabelecimento_id: string;
-          id: string;
-          movimentacao_id: string | null;
-          valor_centavos: number;
-        };
-        Insert: {
-          compromisso_id: string;
-          created_at?: string;
-          data_pagamento?: string;
-          descricao?: string | null;
-          estabelecimento_id: string;
-          id?: string;
-          movimentacao_id?: string | null;
-          valor_centavos: number;
-        };
-        Update: {
-          compromisso_id?: string;
-          created_at?: string;
-          data_pagamento?: string;
-          descricao?: string | null;
-          estabelecimento_id?: string;
-          id?: string;
-          movimentacao_id?: string | null;
-          valor_centavos?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "pagamentos_compromissos_compromisso_id_fkey";
-            columns: ["compromisso_id"];
-            isOneToOne: false;
-            referencedRelation: "compromissos_financeiros";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "pagamentos_compromissos_estabelecimento_id_fkey";
-            columns: ["estabelecimento_id"];
-            isOneToOne: false;
-            referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "pagamentos_compromissos_movimentacao_id_fkey";
-            columns: ["movimentacao_id"];
-            isOneToOne: false;
-            referencedRelation: "movimentacoes_financeiras";
             referencedColumns: ["id"];
           },
         ];

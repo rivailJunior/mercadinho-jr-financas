@@ -22,6 +22,11 @@ Este diretório versiona o schema do banco (projeto `vizyhhyugnufyijtwmyj`).
   `lancamentos_caixa` em `movimentacoes_financeiras` (histórico como movimentos
   `OPERACIONAL` com `afeta_saldo = false`) e a removem — uma única tabela de
   movimentos alimenta saldos e relatórios.
+- `migrations/20261111030000_consolidate_custos_fixos.sql` deriva o custo fixo
+  diário de `view_resumo_diario` dos `compromissos_financeiros` MENSAL ativos
+  e remove `custos_fixos_config` (legada, congelada desde out/2024) e
+  `pagamentos_compromissos` (tabela de auditoria nunca usada — o histórico de
+  pagamentos já é auditável por `movimentacoes_financeiras.compromisso_id`).
 
 ## Fluxo recomendado (quando o Supabase CLI estiver funcional nesta máquina)
 
@@ -40,8 +45,8 @@ supabase db push
 
 ## Segurança pendente (requer decisão/Auth)
 
-As 4 tabelas legadas (`estabelecimentos`, `categorias`,
-`custos_fixos_config`, `config_financeira`) ainda estão com **RLS desabilitado**.
+As 3 tabelas legadas (`estabelecimentos`, `categorias`,
+`config_financeira`) ainda estão com **RLS desabilitado**.
 Habilitar RLS + políticas junto com Supabase Auth é o passo de cutover,
-tratado em migration separada após aprovação. (`lancamentos_caixa` foi
-consolidada em `movimentacoes_financeiras` e removida.)
+tratado em migration separada após aprovação. (`lancamentos_caixa` e
+`custos_fixos_config` foram consolidadas no modelo financeiro e removidas.)

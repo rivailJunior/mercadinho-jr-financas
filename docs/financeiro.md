@@ -98,6 +98,11 @@ do modelo. A antiga `lancamentos_caixa` foi consolidada nela (migrations
 - `view_resumo_diario` lê movimentos `OPERACIONAL` (transferências e
   liquidações nunca contam como faturamento/saída do dia).
 
+O `custos_fixos_dia` dessa view vem dos próprios `compromissos_financeiros`
+MENSAL ativos (`valor_efetivo ?? valor_previsto` ÷ dias úteis) — a config
+legada `custos_fixos_config` foi removida, então o relatório e a provisão
+diária usam a mesma fonte de contas fixas.
+
 Roteamento de conta:
 
 - Entrada: o seletor "Onde entrou?" define a conta — Dinheiro → Caixa
