@@ -63,6 +63,11 @@ export const FinancialActions = ({
   const [valor, setValor] = useState(0); // reais
   const [descricao, setDescricao] = useState("");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  // Fixed bills are paid from Conta do Comércio — it's the account funded
+  // exactly for that, so it is the default source here.
+  const [pagarContaId, setPagarContaId] = useState(
+    contas.find((c) => c.tipo === "BANCO")?.id ?? contas[0]?.id ?? "",
+  );
   const [destinoId, setDestinoId] = useState(contas[1]?.id ?? "");
   const [reservaId, setReservaId] = useState(reservas[0]?.id ?? "");
   const [obrigacaoKey, setObrigacaoKey] = useState("");
@@ -143,7 +148,7 @@ export const FinancialActions = ({
       );
     } else {
       const selecionada = obrigacoes.find((o) => o.key === obrigacaoKey);
-      if (!selecionada || !contaId)
+      if (!selecionada || !pagarContaId)
         return setToast({
           id: Date.now(),
           variant: "error",
@@ -152,11 +157,16 @@ export const FinancialActions = ({
       run(
         selecionada.kind === "fatura"
           ? () =>
-              pagarFatura({ faturaId: selecionada.id, contaId, valorCentavos: centavos, descricao })
+              pagarFatura({
+                faturaId: selecionada.id,
+                contaId: pagarContaId,
+                valorCentavos: centavos,
+                descricao,
+              })
           : () =>
               pagarCompromisso({
                 compromissoId: selecionada.id,
-                contaId,
+                contaId: pagarContaId,
                 valorCentavos: centavos,
                 descricao,
               }),
@@ -267,8 +277,8 @@ export const FinancialActions = ({
                 </Field>
                 <Field label="Pagar a partir de">
                   <SelectField
-                    value={contaId}
-                    onChange={setContaId}
+                    value={pagarContaId}
+                    onChange={setPagarContaId}
                     ariaLabel="Conta de origem do pagamento"
                     options={contas.map((c) => ({
                       value: c.id,
