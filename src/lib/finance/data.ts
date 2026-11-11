@@ -398,7 +398,7 @@ export const getProvisaoDiaria = async (
   const [
     { data: faturaRow },
     { data: compromissoLinks },
-    { data: movimentosHoje },
+    { data: resumoHoje },
     { data: aportesHoje },
   ] = await Promise.all([
     faturaAberta
@@ -409,13 +409,13 @@ export const getProvisaoDiaria = async (
       .select("reserva_id")
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
+    // Same "Livre de Verdade" the Caixa de Hoje tab shows:
+    // faturamento × margem bruta − custo fixo diário, in reais.
     supabase
-      .from("movimentacoes_financeiras")
-      .select("tipo, valor_centavos")
-      .eq("estabelecimento_id", estabelecimentoId)
-      .eq("natureza", "OPERACIONAL")
-      .is("deleted_at", null)
-      .eq("data_referencia", hoje),
+      .from("view_resumo_diario")
+      .select("lucro_liquido_dia")
+      .eq("data_referencia", hoje)
+      .maybeSingle(),
     supabase
       .from("movimentacoes_reservas")
       .select("reserva_id, valor_centavos")
@@ -434,13 +434,10 @@ export const getProvisaoDiaria = async (
     0,
   );
 
-  // Today's net profit (entradas − saídas, in cents) drives the suggestion;
-  // it is offered once per day, so any aporte into the fixed-bill reserves
-  // today locks the button until tomorrow.
-  const lucroDia = (movimentosHoje ?? []).reduce(
-    (acc, m) => acc + (m.tipo === "ENTRADA" ? (m.valor_centavos ?? 0) : -(m.valor_centavos ?? 0)),
-    0,
-  );
+  // Today's net profit drives the suggestion — the whole "Livre de Verdade"
+  // (margin-adjusted, fixed costs already deducted) is offered once per day,
+  // so any aporte into the fixed-bill reserves locks the button until tomorrow.
+  const lucroDia = Math.round((resumoHoje?.lucro_liquido_dia ?? 0) * 100);
   const reservasFixasIds = new Set<string>([
     ...reservaCompromissosIds,
     ...(reservaCartao ? [reservaCartao.id] : []),

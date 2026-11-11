@@ -8,8 +8,8 @@ interface DailyProvisionCardProps {
 
 /**
  * "Quanto guardar hoje pras contas fixas" — shows the daily provision
- * (85% of the day's profit, capped by the remaining gaps). Once today's
- * aporte is registered, it switches to the "Guardado hoje" state.
+ * (the day's "Livre de Verdade", capped by the remaining gaps). Once
+ * today's aporte is registered, it switches to the "Guardado hoje" state.
  */
 export const DailyProvisionCard = ({ provisao }: DailyProvisionCardProps) => {
   const { resultado: r } = provisao;

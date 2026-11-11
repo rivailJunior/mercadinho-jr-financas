@@ -18,26 +18,25 @@ describe("provisaoDiaria — quanto guardar hoje pras contas fixas", () => {
     expect(r.ritmoTotal).toBe(27_500);
   });
 
-  it("guarda 85% do lucro do dia e deixa 15% no caixa", () => {
+  it("guarda o lucro do dia inteiro nas contas fixas", () => {
     const r = provisaoDiaria(base);
-    // 560 × 85% = 476 pras fixas; 84 ficam no caixa
     expect(r.disponivel).toBe(56_000);
-    expect(r.sugerido).toBe(47_600);
-    expect(r.sugeridoCartao).toBe(47_600); // cartão primeiro
+    expect(r.sugerido).toBe(56_000);
+    expect(r.sugeridoCartao).toBe(56_000); // cartão primeiro
     expect(r.sugeridoCompromissos).toBe(0);
-    expect(r.sobraCaixa).toBe(8_400);
+    expect(r.sobraCaixa).toBe(0);
   });
 
   it("transborda pras outras contas quando o cartão está quase coberto", () => {
     const r = provisaoDiaria({ ...base, faltaCartao: 20_000 });
-    expect(r.sugerido).toBe(47_600);
+    expect(r.sugerido).toBe(56_000);
     expect(r.sugeridoCartao).toBe(20_000);
-    expect(r.sugeridoCompromissos).toBe(27_600);
+    expect(r.sugeridoCompromissos).toBe(36_000);
   });
 
   it("limita pela falta total — o excedente fica no caixa", () => {
     const r = provisaoDiaria({ ...base, faltaCartao: 10_000, faltaCompromissos: 20_000 });
-    expect(r.sugerido).toBe(30_000); // 85% de 560 = 476, mas só faltam 300
+    expect(r.sugerido).toBe(30_000); // lucro de 560, mas só faltam 300
     expect(r.sobraCaixa).toBe(26_000);
   });
 

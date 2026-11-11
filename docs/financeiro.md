@@ -122,11 +122,12 @@ Roteamento de conta:
 2. `ritmoCompromissos = faltaCompromissos ÷ 30` — cada conta mensal
    provisiona `valor ÷ 30` por dia, independente do vencimento (campo
    informativo).
-3. `disponivel = max(0, lucroDia)` — o lucro líquido do dia (entradas −
-   saídas) é o que pode ser dividido.
-4. `sugerido = min(85% do lucroDia, faltaTotal, saldoLivre)` — 85% do lucro
-   do dia vai pras contas fixas; 15% fica no caixa. Zerado quando o dia já
-   teve aporte (`jaGuardouHoje`).
+3. `disponivel = max(0, lucroDia)` — o "Livre de Verdade" do dia
+   (`view_resumo_diario.lucro_liquido_dia`: faturamento × margem bruta −
+   custo fixo diário) é o que pode ser dividido.
+4. `sugerido = min(lucroDia, faltaTotal, saldoLivre)` — todo o lucro do dia
+   vai pras contas fixas. Zerado quando o dia já teve aporte
+   (`jaGuardouHoje`).
 5. O cartão recebe primeiro (vencimento mais próximo); o restante vai para
    a reserva dos demais compromissos.
 

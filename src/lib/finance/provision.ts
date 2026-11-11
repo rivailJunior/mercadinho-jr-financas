@@ -9,7 +9,7 @@ export interface ProvisaoInput {
   faltaCompromissos: Cents;
   /** Days in the provision cycle for commitments — bills fund at valor ÷ 30 per day. */
   diasAteCompromissos: number;
-  /** Today's net profit (entradas − saídas) — the source of today's earmark. */
+  /** Today's net profit ("Livre de Verdade") — the source of today's earmark. */
   lucroDia: Cents;
   /** True once today's provision was already executed — the button stays inactive. */
   jaGuardouHoje: boolean;
@@ -25,17 +25,14 @@ export interface ProvisaoResult {
   ritmoTotal: Cents;
   /** max(0, lucroDia): the day's profit available to split. */
   disponivel: Cents;
-  /** 85% of the day's profit into fixed bills; 0 when negative or already saved. */
+  /** The day's profit into fixed bills; 0 when negative or already saved. */
   sugerido: Cents;
   /** Card bucket first (nearest deadline), compromissos get the remainder. */
   sugeridoCartao: Cents;
   sugeridoCompromissos: Cents;
-  /** What stays in the drawer — the 15% share plus any cap overflow. */
+  /** What stays in the drawer — whatever exceeds the remaining gap. */
   sobraCaixa: Cents;
 }
-
-/** Fixed bills keep 85% of the day's profit; the remaining 15% stays as free cash. */
-const PCT_FIXAS = 0.85;
 
 const pace = (falta: Cents, dias: number): Cents =>
   falta <= 0 ? 0 : Math.floor(assertCents(falta) / Math.max(1, Math.floor(dias)));
@@ -43,13 +40,12 @@ const pace = (falta: Cents, dias: number): Cents =>
 /**
  * "Quanto guardar hoje pras contas fixas" — driven by the day's profit.
  *
- * When the net result of the day (entradas − saídas) is positive, 85% of it
- * is earmarked to the fixed-bill envelopes (card first, nearest deadline)
- * and 15% stays in the drawer as free cash. The suggestion is capped by
- * the total remaining gap and by the money that is actually free, and it
- * runs once per day — after today's aporte the suggestion goes to zero.
- * The ritmo fields remain informational: they show the pace needed to
- * cover each gap by its deadline.
+ * When the day's "Livre de Verdade" is positive, the whole amount is
+ * earmarked to the fixed-bill envelopes (card first, nearest deadline).
+ * The suggestion is capped by the total remaining gap and by the money
+ * that is actually free, and it runs once per day — after today's aporte
+ * the suggestion goes to zero. The ritmo fields remain informational:
+ * they show the pace needed to cover each gap by its deadline.
  */
 export const provisaoDiaria = (input: ProvisaoInput): ProvisaoResult => {
   const ritmoCartao = pace(input.faltaCartao, input.diasAteFatura);
@@ -61,7 +57,7 @@ export const provisaoDiaria = (input: ProvisaoInput): ProvisaoResult => {
     : Math.max(
         0,
         Math.min(
-          Math.floor(disponivel * PCT_FIXAS),
+          disponivel,
           input.faltaCartao + input.faltaCompromissos,
           assertCents(input.saldoLivre),
         ),
