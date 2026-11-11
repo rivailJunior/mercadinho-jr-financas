@@ -75,6 +75,7 @@ export async function criarTransferencia(input: {
     p_conta_origem_id: parsed.data.contaOrigemId,
     p_conta_destino_id: parsed.data.contaDestinoId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
@@ -102,6 +103,7 @@ export async function aportarReserva(input: {
     p_estabelecimento_id: estabelecimentoId,
     p_reserva_id: parsed.data.reservaId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
@@ -121,6 +123,7 @@ export async function retirarReserva(input: {
     p_estabelecimento_id: estabelecimentoId,
     p_reserva_id: parsed.data.reservaId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
@@ -148,6 +151,7 @@ export async function transferirReservas(input: {
     p_reserva_origem_id: parsed.data.reservaOrigemId,
     p_reserva_destino_id: parsed.data.reservaDestinoId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
@@ -187,6 +191,7 @@ export async function guardarParaFixas(): Promise<SaveResult> {
       p_estabelecimento_id: estabelecimentoId,
       p_reserva_id: a.reservaId,
       p_valor_centavos: a.valor,
+      p_data_referencia: todayISODate(),
       p_descricao: "Provisão diária (contas fixas)",
     });
     if (error) return { ok: false, error: error.message };
@@ -235,6 +240,7 @@ export async function pagarCompromisso(input: {
     p_compromisso_id: parsed.data.compromissoId,
     p_conta_id: parsed.data.contaId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
@@ -264,6 +270,7 @@ export async function pagarFatura(input: {
     p_fatura_id: parsed.data.faturaId,
     p_conta_id: parsed.data.contaId,
     p_valor_centavos: assertCents(parsed.data.valorCentavos),
+    p_data_referencia: todayISODate(),
     p_descricao: parsed.data.descricao?.trim() || undefined,
   });
   return err(error);
