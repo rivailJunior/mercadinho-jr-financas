@@ -749,6 +749,14 @@ export type Database = {
         Args: { p_movimentacao_id: string };
         Returns: undefined;
       };
+      desfazer_pagamento: {
+        Args: { p_movimentacao_id: string };
+        Returns: undefined;
+      };
+      desfazer_transferencia: {
+        Args: { p_transferencia_id: string };
+        Returns: undefined;
+      };
       pagar_compromisso: {
         Args: {
           p_compromisso_id: string;

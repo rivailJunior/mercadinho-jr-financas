@@ -214,6 +214,34 @@ export async function desfazerAporteReserva(input: {
   return err(error);
 }
 
+// --- Desfazer transferência / pagamento -----------------------------------------
+
+export async function desfazerTransferencia(input: {
+  transferenciaId: string;
+}): Promise<SaveResult> {
+  const parsed = z.object({ transferenciaId: uuidSchema }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Transferência inválida." };
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.rpc("desfazer_transferencia", {
+    p_transferencia_id: parsed.data.transferenciaId,
+  });
+  return err(error);
+}
+
+export async function desfazerPagamento(input: {
+  movimentacaoId: string;
+}): Promise<SaveResult> {
+  const parsed = z.object({ movimentacaoId: uuidSchema }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Pagamento inválido." };
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.rpc("desfazer_pagamento", {
+    p_movimentacao_id: parsed.data.movimentacaoId,
+  });
+  return err(error);
+}
+
 // --- Compromissos (contas fixas) ----------------------------------------------
 
 export async function pagarCompromisso(input: {

@@ -23,6 +23,27 @@ export interface MovimentoReserva {
   reservaNome: string;
 }
 
+export interface Transferencia {
+  id: string;
+  valor: Cents;
+  dataReferencia: string;
+  descricao: string | null;
+  origemNome: string;
+  destinoNome: string;
+}
+
+export interface Pagamento {
+  id: string;
+  natureza: "LIQUIDACAO_FATURA" | "LIQUIDACAO_COMPROMISSO" | "TRANSFERENCIA" | string;
+  valor: Cents;
+  dataReferencia: string;
+  descricao: string | null;
+  contaNome: string;
+  compromissoNome: string | null;
+  /** Set when the payment settled internally via a transfer. */
+  transferenciaId: string | null;
+}
+
 export interface PainelFinanceiro {
   posicao: PosicaoFinanceira;
   contas: (Conta & { saldoAtual: Cents })[];
@@ -30,6 +51,8 @@ export interface PainelFinanceiro {
   compromissos: Compromisso[];
   faturas: Fatura[];
   movimentosReserva: MovimentoReserva[];
+  transferencias: Transferencia[];
+  pagamentos: Pagamento[];
   /** Money in the fixed-bill reserves beyond the accrued daily rhythm. */
   adiantadoFixas: Cents;
 }
@@ -63,6 +86,8 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     { data: compromissosRows },
     { data: faturasRows },
     { data: movReservaRows },
+    { data: transferenciasRows },
+    { data: pagamentosRows },
   ] = await Promise.all([
     supabase
       .from("v_saldos_contas")
@@ -93,6 +118,27 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
         "id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras!movimentacoes_reservas_reserva_id_fkey(nome)",
       )
       .eq("estabelecimento_id", estabelecimentoId)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("transferencias")
+      .select(
+        "id, valor_centavos, data_referencia, descricao, origem:contas_financeiras!transferencias_conta_origem_id_fkey(nome), destino:contas_financeiras!transferencias_conta_destino_id_fkey(nome)",
+      )
+      .eq("estabelecimento_id", estabelecimentoId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("movimentacoes_financeiras")
+      .select(
+        "id, natureza, valor_centavos, data_referencia, descricao, transferencia_id, contas_financeiras!movimentacoes_financeiras_conta_id_fkey(nome), compromissos_financeiros!movimentacoes_financeiras_compromisso_id_fkey(nome)",
+      )
+      .eq("estabelecimento_id", estabelecimentoId)
+      .is("deleted_at", null)
+      .or(
+        "natureza.in.(LIQUIDACAO_FATURA,LIQUIDACAO_COMPROMISSO),and(natureza.eq.TRANSFERENCIA,compromisso_id.not.is.null,tipo.eq.SAIDA)",
+      )
       .order("created_at", { ascending: false })
       .limit(20),
   ]);
@@ -271,6 +317,26 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     reservaNome: (m.reservas_financeiras as { nome?: string } | null)?.nome ?? "Reserva",
   }));
 
+  const transferencias: Transferencia[] = (transferenciasRows ?? []).map((t) => ({
+    id: t.id,
+    valor: t.valor_centavos,
+    dataReferencia: t.data_referencia,
+    descricao: t.descricao,
+    origemNome: (t.origem as { nome?: string } | null)?.nome ?? "Conta",
+    destinoNome: (t.destino as { nome?: string } | null)?.nome ?? "Conta",
+  }));
+
+  const pagamentos: Pagamento[] = (pagamentosRows ?? []).map((p) => ({
+    id: p.id,
+    natureza: p.natureza,
+    valor: p.valor_centavos,
+    dataReferencia: p.data_referencia,
+    descricao: p.descricao,
+    contaNome: (p.contas_financeiras as { nome?: string } | null)?.nome ?? "Conta",
+    compromissoNome: (p.compromissos_financeiros as { nome?: string } | null)?.nome ?? null,
+    transferenciaId: p.transferencia_id,
+  }));
+
   return {
     posicao,
     contas,
@@ -278,6 +344,8 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     compromissos,
     faturas,
     movimentosReserva,
+    transferencias,
+    pagamentos,
     adiantadoFixas,
   };
 };

@@ -3,7 +3,7 @@ export { GreetingHeader } from "./greeting-header";
 export { CurrencyInput } from "./currency-input";
 export { CashEntryCard } from "./cash-entry-card";
 export { DailySummaryCard } from "./daily-summary-card";
-export { ReserveMovementsCard } from "./reserve-movements-card";
+export { OperationsHistoryCard } from "./operations-history-card";
 export { YearlySummaryCard } from "./yearly-summary-card";
 export { WeeklyChart } from "./weekly-chart";
 export { YearlyChart } from "./yearly-chart";
