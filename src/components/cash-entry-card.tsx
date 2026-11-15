@@ -9,21 +9,21 @@ import { useCallback, useState } from "react";
 
 type ActiveTab = "entrada" | "saida";
 
-const QUICK_EXPENSE_TAGS = [
+export const QUICK_EXPENSE_TAGS = [
   { emoji: "🥬", label: "Mercadoria", value: "Repicao Mercadoria" },
   // { emoji: '🥬', label: 'Feira', value: 'Hortifrúti / Feira' },
   { emoji: "🧾", label: "Fornecedor", value: "Boleto de Fornecedor" },
   { emoji: "🔧", label: "Manutenção", value: "Agua /Luz / Telefone / Etc" },
 ];
 
-type ContaOpcao = "CAIXA_FISICO" | "MAQUININHA";
+export type ContaOpcao = "CAIXA_FISICO" | "MAQUININHA";
 
-const CONTA_OPCOES: { id: ContaOpcao; label: string }[] = [
+export const CONTA_OPCOES: { id: ContaOpcao; label: string }[] = [
   { id: "CAIXA_FISICO", label: "Dinheiro (gaveta)" },
   { id: "MAQUININHA", label: "Maquininha / Pix" },
 ];
 
-const SAIDA_ORIGEM_OPCOES: { id: SaidaOrigem; label: string }[] = [
+export const SAIDA_ORIGEM_OPCOES: { id: SaidaOrigem; label: string }[] = [
   { id: "ENTRADA_DIA", label: "Entrada do dia" },
   { id: "SALDO_ACUMULADO", label: "Saldo acumulado" },
 ];
@@ -44,7 +44,7 @@ interface CashEntryCardProps {
   isSaving: boolean;
 }
 
-const ContaSelector = <T extends string>({
+export const ContaSelector = <T extends string>({
   label,
   options,
   value,
