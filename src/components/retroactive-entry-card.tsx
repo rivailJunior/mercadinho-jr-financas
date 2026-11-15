@@ -12,7 +12,7 @@ import { CurrencyInput } from "@/components/currency-input";
 import { daysAgoISODate, formatShortISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { SaidaOrigem } from "@/types/cashClosing";
-import { CheckCircle, Mic } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 

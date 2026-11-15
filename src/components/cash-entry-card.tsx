@@ -4,7 +4,7 @@ import { CurrencyInput } from "@/components/currency-input";
 import { formatShortISODate, todayISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { CashEntry, SaidaOrigem } from "@/types/cashClosing";
-import { CheckCircle, Mic } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type ActiveTab = "entrada" | "saida";
@@ -150,11 +150,11 @@ export const CashEntryCard = ({
         <div className="space-y-4">
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
             <span className="block text-xs font-bold text-emerald-800">
-              ✨ Registro de Vendas de Hoje
+              Registro de Vendas de Hoje
             </span>
-            <p className="mt-0.5 text-[11px] text-emerald-700">
-              Some aqui o dinheiro físico da gaveta, maquininhas de cartão e Pix recebidos.
-            </p>
+            {/* <p className="mt-0.5 text-[11px] text-emerald-700">
+              Somatória de todas as vendas do dia
+            </p> */}
           </div>
 
           <div className="space-y-1.5">
@@ -165,16 +165,6 @@ export const CashEntryCard = ({
               onChange={handleCashFieldChange("dinheiroGaveta")}
               placeholder="0,00"
             />
-            <p className="pl-1 text-[11px] text-slate-400">
-              <button
-                type="button"
-                aria-label="Usar microfone para falar valor"
-                className="mr-1 inline-flex align-middle text-slate-400 transition-colors hover:text-indigo-600"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-              Dica: pode falar no microfone: &quot;Três mil duzentos e cinquenta&quot;.
-            </p>
           </div>
 
           <ContaSelector
@@ -207,11 +197,8 @@ export const CashEntryCard = ({
         <div className="space-y-4">
           <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3">
             <span className="block text-xs font-bold text-rose-800">
-              🛒 Registro de Saídas &amp; Despesas Rápidas
+              Registro de Saídas &amp; Despesas Rápidas
             </span>
-            <p className="mt-0.5 text-[11px] text-rose-600">
-              Pagou fornecedor no balcão, reposição de verduras ou pãozinho? Anote aqui!
-            </p>
           </div>
 
           <CurrencyInput
@@ -232,7 +219,7 @@ export const CashEntryCard = ({
           <div className="space-y-1.5">
             <label
               htmlFor="motivo-saida"
-              className="block text-xs font-bold uppercase tracking-wide text-slate-600"
+              className="block text-xs font-bold tracking-wide text-slate-600"
             >
               Com o que foi gasto? (Descrição simples)
             </label>
