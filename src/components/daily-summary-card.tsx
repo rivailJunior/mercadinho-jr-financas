@@ -41,9 +41,9 @@ export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
         />
         <div className="col-span-2">
           <SummaryCardItem
-            label="Livre de Verdade"
+            label="Lucro do dia"
             value={summary.sobraLimpa}
-            subtitle="Lucro limpo do dia"
+            subtitle="Usar para contas fixas"
             bgColor="bg-brand-deep-purple"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
