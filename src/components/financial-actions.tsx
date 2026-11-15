@@ -177,7 +177,7 @@ export const FinancialActions = ({
 
   return (
     <section
-      className="rounded-3xl border border-indigo-50/50 bg-white p-5 shadow-soft"
+      className="rounded-3xl border border-slate-100 bg-white p-5 shadow-soft"
       aria-labelledby="acoes-title"
     >
       {toast && <Toast key={toast.id} toast={toast} onDismiss={() => setToast(null)} />}
@@ -186,13 +186,13 @@ export const FinancialActions = ({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={cn("flex w-full items-center justify-between", open && "mb-4")}
+        className={cn("flex w-full items-center justify-between", open && "mb-3")}
       >
         <h2 id="acoes-title" className="text-base font-bold text-slate-700">
-          Operações financeiras
+          Operações Financeiras
         </h2>
-        <span className="flex items-center gap-1 text-xs font-bold text-indigo-600">
-          {open ? "Fechar" : "Registrar operação"}
+        <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-indigo-600">
+          {open ? "Fechar" : "Registrar"}
           <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
         </span>
       </button>

@@ -9,15 +9,6 @@ interface FinancialDashboardProps {
   painel: PainelFinanceiro;
 }
 
-const STATUS_COMPROMISSO: Record<string, { label: string; accent: string }> = {
-  PENDENTE: { label: "Pendente", accent: "text-slate-400" },
-  PARCIALMENTE_RESERVADO: { label: "Reservando", accent: "text-indigo-500" },
-  RESERVADO: { label: "Reservado", accent: "text-indigo-600" },
-  PARCIALMENTE_PAGO: { label: "Parcial", accent: "text-amber-600" },
-  PAGO: { label: "Pago", accent: "text-emerald-600" },
-  VENCIDO: { label: "Vencido", accent: "text-rose-600" },
-};
-
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const { posicao, contas, reservas, compromissos, faturas, adiantadoFixas } = painel;
   // Reserves with nothing saved and no linked obligation have nothing to
@@ -66,9 +57,9 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
         </div>
         <div className="grid grid-cols-2 gap-3.5">
           <SummaryCardItem
-            label="Saldo consolidado"
+            label="Saldo Total"
             value={posicao.saldoConsolidado / 100}
-            subtitle="Soma de todas as contas"
+            subtitle="Saldo dia + Reservado"
             bgColor="bg-brand-blue"
             labelColor="text-blue-100"
             subtitleColor="text-blue-200"
@@ -76,9 +67,9 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             icon={Landmark}
           />
           <SummaryCardItem
-            label="Total reservado"
+            label="Total Reservado"
             value={posicao.totalReservado / 100}
-            subtitle="Guardado nos envelopes"
+            subtitle="Conta Ton - Contas Fixas"
             bgColor="bg-brand-deep-purple"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
@@ -87,9 +78,9 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           />
           <div className="col-span-2">
             <SummaryCardItem
-              label="Saldo livre"
+              label="Saldo livre do dia"
               value={livre / 100}
-              subtitle="Disponível pra operar"
+              subtitle="Caixa Fisico + Maquininha"
               bgColor={livre >= 0 ? "bg-brand-mint" : "bg-brand-coral"}
               labelColor={livre >= 0 ? "text-emerald-100" : "text-rose-100"}
               subtitleColor={livre >= 0 ? "text-emerald-100" : "text-rose-200"}
@@ -140,7 +131,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             <PiggyBank className="h-5 w-5" aria-hidden="true" />
           </div>
           <h3 id="reservas-title" className="text-sm font-extrabold leading-snug text-slate-800">
-            Reservas
+            Total Reservado - Conta Ton
           </h3>
         </div>
         <ul className="space-y-3 border-t border-slate-100 pt-3">
@@ -222,8 +213,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           )}
           {contasFixas.map((c) => {
             const total = c.valorEfetivo ?? c.valorPrevisto;
-            const falta = Math.max(0, total - c.valorReservado - c.valorPago);
-            const st = STATUS_COMPROMISSO[c.status] ?? STATUS_COMPROMISSO.PENDENTE;
             return (
               <li key={c.id} className="text-xs">
                 <div className="flex items-center justify-between py-0.5">
@@ -241,17 +230,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                     <span />
                   )}
                   <span className="tabular-nums">{formatCents(Math.round(total / 30))}/dia</span>
-                </div>
-                <div className="mt-0.5 flex items-center justify-between text-[11px]">
-                  <span className={`font-bold ${st.accent}`}>{st.label}</span>
-                  {falta > 0 ? (
-                    <span className="text-slate-400">
-                      {c.valorReservado > 0 && `${formatCents(c.valorReservado)} reservado · `}
-                      Falta {formatCents(falta)}
-                    </span>
-                  ) : (
-                    <span className="text-emerald-600">Coberto</span>
-                  )}
                 </div>
               </li>
             );

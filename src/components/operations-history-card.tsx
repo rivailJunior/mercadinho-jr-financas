@@ -121,7 +121,7 @@ export const OperationsHistoryCard = ({
           Histórico de Operações
         </h2>
         <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-indigo-600">
-          {open ? "Fechar" : "Ver histórico"}
+          {open ? "Fechar" : "Ver"}
           <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
         </span>
       </button>
