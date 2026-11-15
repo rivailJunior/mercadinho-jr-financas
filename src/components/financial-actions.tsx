@@ -157,19 +157,19 @@ export const FinancialActions = ({
       run(
         selecionada.kind === "fatura"
           ? () =>
-              pagarFatura({
-                faturaId: selecionada.id,
-                contaId: pagarContaId,
-                valorCentavos: centavos,
-                descricao,
-              })
+            pagarFatura({
+              faturaId: selecionada.id,
+              contaId: pagarContaId,
+              valorCentavos: centavos,
+              descricao,
+            })
           : () =>
-              pagarCompromisso({
-                compromissoId: selecionada.id,
-                contaId: pagarContaId,
-                valorCentavos: centavos,
-                descricao,
-              }),
+            pagarCompromisso({
+              compromissoId: selecionada.id,
+              contaId: pagarContaId,
+              valorCentavos: centavos,
+              descricao,
+            }),
         "Pagamento registrado!",
       );
     }
@@ -189,7 +189,7 @@ export const FinancialActions = ({
         className={cn("flex w-full items-center justify-between", open && "mb-4")}
       >
         <h2 id="acoes-title" className="text-base font-bold text-slate-700">
-          Ações financeiras
+          Operações financeiras
         </h2>
         <span className="flex items-center gap-1 text-xs font-bold text-indigo-600">
           {open ? "Fechar" : "Registrar operação"}
