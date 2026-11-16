@@ -8,7 +8,7 @@ import {
 import type { MovimentoReserva, Pagamento, Transferencia } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { ArrowLeftRight, Check, History, PiggyBank, ReceiptText, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Check, ChevronDown, PiggyBank, ReceiptText, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -63,6 +63,7 @@ export const OperationsHistoryCard = ({
   pagamentos,
 }: OperationsHistoryCardProps) => {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [aba, setAba] = useState<Aba>("reservas");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -103,141 +104,147 @@ export const OperationsHistoryCard = ({
       aria-labelledby="historico-ops-title"
       className="rounded-3xl border border-slate-100 bg-white p-5 shadow-soft"
     >
-      <div className="mb-3 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
-          <History className="h-5 w-5" aria-hidden="true" />
-        </div>
-        <div>
-          <h3
-            id="historico-ops-title"
-            className="text-sm font-extrabold leading-snug text-slate-800"
-          >
-            Histórico
-          </h3>
-          <p className="text-xs text-slate-500">Últimas transferências, reservas e pagamentos.</p>
-        </div>
-      </div>
-
-      <div
-        role="tablist"
-        aria-label="Tipo de operação"
-        className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1"
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn("flex w-full items-center justify-between", open && "mb-3")}
       >
-        {ABAS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={aba === id}
-            onClick={() => setAba(id)}
-            className={cn(
-              "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold transition-all",
-              aba === id ? "bg-white font-extrabold text-indigo-600 shadow-sm" : "text-slate-500",
-            )}
+        <h2 id="acoes-title" className="text-base font-bold text-slate-700">
+          Histórico de Operações
+        </h2>
+        <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-indigo-600">
+          {open ? "Fechar" : "Ver"}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        </span>
+      </button>
+
+      {open && (
+        <>
+          <div
+            role="tablist"
+            aria-label="Tipo de operação"
+            className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1"
           >
-            <Icon className="h-4 w-4" aria-hidden="true" />
-            {label}
-          </button>
-        ))}
-      </div>
+            {ABAS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={aba === id}
+                onClick={() => setAba(id)}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold transition-all",
+                  aba === id
+                    ? "bg-white font-extrabold text-indigo-600 shadow-sm"
+                    : "text-slate-500",
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
 
-      {error && <p className="mb-2 text-xs font-semibold text-rose-600">{error}</p>}
+          {error && <p className="mb-2 text-xs font-semibold text-rose-600">{error}</p>}
 
-      {aba === "reservas" &&
-        (movimentos.length === 0 ? (
-          <EmptyTab>Nenhum valor guardado ou retirado ainda.</EmptyTab>
-        ) : (
-          <ul className="space-y-2 border-t border-slate-100 pt-3">
-            {movimentos.map((m) => {
-              const isEntrada = m.tipo === "APORTE" || m.tipo === "TRANSFERENCIA_ENTRADA";
-              return (
-                <Row
-                  key={m.id}
-                  title={m.descricao ?? m.reservaNome}
-                  subtitle={`${m.reservaNome} · ${formatData(m.dataReferencia)}`}
-                >
-                  <span
-                    className={cn(
-                      "tabular-nums font-bold",
-                      isEntrada ? "text-indigo-600" : "text-slate-600",
-                    )}
+          {aba === "reservas" &&
+            (movimentos.length === 0 ? (
+              <EmptyTab>Nenhum valor guardado ou retirado ainda.</EmptyTab>
+            ) : (
+              <ul className="space-y-2 border-t border-slate-100 pt-3">
+                {movimentos.map((m) => {
+                  const isEntrada = m.tipo === "APORTE" || m.tipo === "TRANSFERENCIA_ENTRADA";
+                  return (
+                    <Row
+                      key={m.id}
+                      title={m.descricao ?? m.reservaNome}
+                      subtitle={`${m.reservaNome} · ${formatData(m.dataReferencia)}`}
+                    >
+                      <span
+                        className={cn(
+                          "tabular-nums font-bold",
+                          isEntrada ? "text-indigo-600" : "text-slate-600",
+                        )}
+                      >
+                        {isEntrada ? "+" : "−"}
+                        {formatCents(m.valor)}
+                      </span>
+                      {m.tipo === "APORTE" && (
+                        <button
+                          type="button"
+                          aria-label={`Desfazer aporte de ${formatCents(m.valor)}`}
+                          onClick={() => setDeleteTarget({ kind: "aporte", mov: m })}
+                          className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      )}
+                    </Row>
+                  );
+                })}
+              </ul>
+            ))}
+
+          {aba === "transferencias" &&
+            (transferenciasVisiveis.length === 0 ? (
+              <EmptyTab>Nenhuma transferência registrada.</EmptyTab>
+            ) : (
+              <ul className="space-y-2 border-t border-slate-100 pt-3">
+                {transferenciasVisiveis.map((t) => (
+                  <Row
+                    key={t.id}
+                    title={t.descricao ?? `${t.origemNome} → ${t.destinoNome}`}
+                    subtitle={`${t.origemNome} → ${t.destinoNome} · ${formatData(t.dataReferencia)}`}
                   >
-                    {isEntrada ? "+" : "−"}
-                    {formatCents(m.valor)}
-                  </span>
-                  {m.tipo === "APORTE" && (
+                    <span className="tabular-nums font-bold text-slate-700">
+                      {formatCents(t.valor)}
+                    </span>
                     <button
                       type="button"
-                      aria-label={`Desfazer aporte de ${formatCents(m.valor)}`}
-                      onClick={() => setDeleteTarget({ kind: "aporte", mov: m })}
+                      aria-label={`Desfazer transferência de ${formatCents(t.valor)}`}
+                      onClick={() => setDeleteTarget({ kind: "transferencia", t })}
                       className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
-                  )}
-                </Row>
-              );
-            })}
-          </ul>
-        ))}
-
-      {aba === "transferencias" &&
-        (transferenciasVisiveis.length === 0 ? (
-          <EmptyTab>Nenhuma transferência registrada.</EmptyTab>
-        ) : (
-          <ul className="space-y-2 border-t border-slate-100 pt-3">
-            {transferenciasVisiveis.map((t) => (
-              <Row
-                key={t.id}
-                title={t.descricao ?? `${t.origemNome} → ${t.destinoNome}`}
-                subtitle={`${t.origemNome} → ${t.destinoNome} · ${formatData(t.dataReferencia)}`}
-              >
-                <span className="tabular-nums font-bold text-slate-700">
-                  {formatCents(t.valor)}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Desfazer transferência de ${formatCents(t.valor)}`}
-                  onClick={() => setDeleteTarget({ kind: "transferencia", t })}
-                  className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </Row>
+                  </Row>
+                ))}
+              </ul>
             ))}
-          </ul>
-        ))}
 
-      {aba === "pagamentos" &&
-        (pagamentos.length === 0 ? (
-          <EmptyTab>Nenhum pagamento registrado.</EmptyTab>
-        ) : (
-          <ul className="space-y-2 border-t border-slate-100 pt-3">
-            {pagamentos.map((p) => (
-              <Row
-                key={p.id}
-                title={
-                  p.descricao ??
-                  p.compromissoNome ??
-                  (p.natureza === "LIQUIDACAO_FATURA" ? "Fatura do cartão" : "Conta fixa")
-                }
-                subtitle={`${p.contaNome} · ${formatData(p.dataReferencia)}`}
-              >
-                <span className="tabular-nums font-bold text-slate-600">
-                  −{formatCents(p.valor)}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Desfazer pagamento de ${formatCents(p.valor)}`}
-                  onClick={() => setDeleteTarget({ kind: "pagamento", p })}
-                  className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </Row>
+          {aba === "pagamentos" &&
+            (pagamentos.length === 0 ? (
+              <EmptyTab>Nenhum pagamento registrado.</EmptyTab>
+            ) : (
+              <ul className="space-y-2 border-t border-slate-100 pt-3">
+                {pagamentos.map((p) => (
+                  <Row
+                    key={p.id}
+                    title={
+                      p.descricao ??
+                      p.compromissoNome ??
+                      (p.natureza === "LIQUIDACAO_FATURA" ? "Fatura do cartão" : "Conta fixa")
+                    }
+                    subtitle={`${p.contaNome} · ${formatData(p.dataReferencia)}`}
+                  >
+                    <span className="tabular-nums font-bold text-slate-600">
+                      −{formatCents(p.valor)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Desfazer pagamento de ${formatCents(p.valor)}`}
+                      onClick={() => setDeleteTarget({ kind: "pagamento", p })}
+                      className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </Row>
+                ))}
+              </ul>
             ))}
-          </ul>
-        ))}
+        </>
+      )}
 
       {deleteTarget && (
         <dialog

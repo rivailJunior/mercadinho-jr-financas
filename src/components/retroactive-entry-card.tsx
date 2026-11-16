@@ -1,9 +1,19 @@
 "use client";
 
-import { saveRetroativo } from "@/app/actions/lancamentos";
+import { saveEntrada, saveSaida } from "@/app/actions/lancamentos";
+import {
+  CONTA_OPCOES,
+  type ContaOpcao,
+  ContaSelector,
+  QUICK_EXPENSE_TAGS,
+  SAIDA_ORIGEM_OPCOES,
+} from "@/components/cash-entry-card";
 import { CurrencyInput } from "@/components/currency-input";
 import { daysAgoISODate, formatShortISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import type { SaidaOrigem } from "@/types/cashClosing";
+import { CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 type TipoMovimentacao = "entrada" | "saida";
@@ -14,9 +24,13 @@ interface RetroactiveEntryCardProps {
 }
 
 export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardProps) => {
+  const router = useRouter();
   const [data, setData] = useState("");
   const [tipo, setTipo] = useState<TipoMovimentacao>("entrada");
   const [valor, setValor] = useState(0);
+  const [entradaConta, setEntradaConta] = useState<ContaOpcao>("CAIXA_FISICO");
+  const [saidaOrigem, setSaidaOrigem] = useState<SaidaOrigem>("ENTRADA_DIA");
+  const [descricao, setDescricao] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,25 +38,28 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
     setData("");
     setValor(0);
     setTipo("entrada");
+    setEntradaConta("CAIXA_FISICO");
+    setSaidaOrigem("ENTRADA_DIA");
+    setDescricao("");
     setError(null);
   }, []);
 
   const handleConfirm = useCallback(async () => {
     setIsSaving(true);
     setError(null);
-    const result = await saveRetroativo({
-      data,
-      tipo: tipo === "entrada" ? "ENTRADA" : "SAIDA",
-      valor,
-    });
+    const result =
+      tipo === "entrada"
+        ? await saveEntrada({ total: valor, conta: entradaConta, dataReferencia: data })
+        : await saveSaida({ valor, descricao, origem: saidaOrigem, dataReferencia: data });
     setIsSaving(false);
     if (!result.ok) {
       setError(result.error ?? "Erro ao salvar lancamento.");
       return;
     }
+    router.refresh();
     onClose();
     handleReset();
-  }, [data, tipo, valor, onClose, handleReset]);
+  }, [data, tipo, valor, entradaConta, saidaOrigem, descricao, router, onClose, handleReset]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -190,21 +207,89 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label
-            htmlFor="valor-outro-dia"
-            className="block text-xs font-bold uppercase tracking-wide text-slate-600"
-          >
-            Valor movimentado:
-          </label>
-          <CurrencyInput
-            id="valor-outro-dia"
-            label=""
-            value={valor}
-            onChange={setValor}
-            placeholder="R$ 0,00"
-          />
-        </div>
+        {tipo === "entrada" && (
+          <>
+            <div className="space-y-1.5">
+              <CurrencyInput
+                id="valor-entrada-retroativa"
+                label="Quanto entrou no caixa?"
+                value={valor}
+                onChange={setValor}
+                placeholder="0,00"
+              />
+            </div>
+
+            <ContaSelector
+              label="Onde entrou?"
+              options={CONTA_OPCOES}
+              value={entradaConta}
+              onChange={setEntradaConta}
+            />
+          </>
+        )}
+
+        {tipo === "saida" && (
+          <>
+            {/* <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3">
+              <span className="block text-xs font-bold text-rose-800">
+                🛒 Registro de Saídas &amp; Despesas Rápidas
+              </span>
+              <p className="mt-0.5 text-[11px] text-rose-600">
+                Pagou fornecedor no balcão, reposição de verduras ou pãozinho? Anote aqui!
+              </p>
+            </div> */}
+
+            <CurrencyInput
+              id="valor-saida-retroativa"
+              label="Valor que saiu:"
+              value={valor}
+              onChange={setValor}
+              placeholder="0,00"
+            />
+
+            <ContaSelector
+              label="De onde saiu?"
+              options={SAIDA_ORIGEM_OPCOES}
+              value={saidaOrigem}
+              onChange={setSaidaOrigem}
+            />
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="motivo-saida-retroativa"
+                className="block text-xs font-bold uppercase tracking-wide text-slate-600"
+              >
+                Com o que foi gasto? (Descrição simples)
+              </label>
+              <input
+                id="motivo-saida-retroativa"
+                type="text"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Ex: Fornecedor de pães, verdura da feira, conta de luz"
+                className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-indigo-500 focus:bg-white"
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {QUICK_EXPENSE_TAGS.map((tag) => (
+                  <button
+                    key={tag.label}
+                    type="button"
+                    onClick={() => setDescricao(tag.value)}
+                    className="rounded-lg bg-slate-100 px-1.5 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200"
+                  >
+                    {tag.emoji} {tag.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center text-xs font-medium text-slate-400">
+              {saidaOrigem === "SALDO_ACUMULADO"
+                ? "Sai do saldo acumulado — não altera a sobra do dia."
+                : "Deduz automaticamente da sobra limpa do dia."}
+            </p>
+          </>
+        )}
 
         <div className="space-y-2 pt-2">
           {error && (
@@ -216,10 +301,15 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
             type="button"
             onClick={handleConfirm}
             disabled={!data || valor === 0 || isSaving}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-lg transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(
+              "flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-extrabold text-white shadow-button-tap transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
+              tipo === "entrada"
+                ? "bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                : "bg-linear-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600",
+            )}
           >
-            <span>✓</span>
-            <span>{isSaving ? "Salvando..." : "Confirmar e Salvar no Dia Escolhido"}</span>
+            <CheckCircle className="h-5 w-5" />
+            {isSaving ? "Salvando..." : "Salvar no Dia Escolhido"}
           </button>
           <button
             type="button"
