@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write ."
   },
   "dependencies": {

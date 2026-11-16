@@ -18,6 +18,7 @@
 - `npm run test:unit` — Run unit tests
 - `npm run test:e2e` — Run E2E tests
 - `npm run lint` — Run linter
+- `npm run typecheck` — Run TypeScript typecheck
 
 ## Project Structure
 
