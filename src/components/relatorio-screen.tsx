@@ -6,7 +6,6 @@ import { MonthFilterCard } from "@/components/month-filter-card";
 import { MonthlySummaryCard } from "@/components/monthly-summary-card";
 import { Toast, type ToastMessage } from "@/components/toast";
 import { TransactionsCard } from "@/components/transactions-card";
-import { WhatsAppHelpLink } from "@/components/whatsapp-help-link";
 import type { Lancamento, LancamentoFilter, MonthlyReport } from "@/types/cashClosing";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -88,7 +87,7 @@ export const RelatorioScreen = ({ report, diaSelecionado }: RelatorioScreenProps
         onDelete={setDeleteTarget}
       />
 
-      <WhatsAppHelpLink />
+      {/* <WhatsAppHelpLink /> */}
 
       <DeleteLancamentoModal
         lancamento={deleteTarget}

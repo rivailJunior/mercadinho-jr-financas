@@ -2,7 +2,6 @@ import {
   BottomNav,
   FechamentoCaixaForm,
   WeeklyChart,
-  WhatsAppHelpLink,
   YearlyChart,
   YearlySummaryCard,
 } from "@/components";
@@ -32,7 +31,7 @@ export default async function Home() {
         <WeeklyChart data={weeklyData} />
         <YearlyChart data={yearlyData} />
 
-        <WhatsAppHelpLink />
+        {/* <WhatsAppHelpLink /> */}
       </div>
 
       <BottomNav />
