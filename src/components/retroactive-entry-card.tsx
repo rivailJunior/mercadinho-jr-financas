@@ -3,8 +3,8 @@
 import { saveEntrada, saveSaida } from "@/app/actions/lancamentos";
 import {
   CONTA_OPCOES,
-  ContaSelector,
   type ContaOpcao,
+  ContaSelector,
   QUICK_EXPENSE_TAGS,
   SAIDA_ORIGEM_OPCOES,
 } from "@/components/cash-entry-card";
@@ -209,8 +209,6 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
 
         {tipo === "entrada" && (
           <>
-
-
             <div className="space-y-1.5">
               <CurrencyInput
                 id="valor-entrada-retroativa"
@@ -219,7 +217,6 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
                 onChange={setValor}
                 placeholder="0,00"
               />
-
             </div>
 
             <ContaSelector

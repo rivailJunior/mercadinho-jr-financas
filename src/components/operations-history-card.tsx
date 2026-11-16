@@ -8,14 +8,7 @@ import {
 import type { MovimentoReserva, Pagamento, Transferencia } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import {
-  ArrowLeftRight,
-  Check,
-  ChevronDown,
-  PiggyBank,
-  ReceiptText,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeftRight, Check, ChevronDown, PiggyBank, ReceiptText, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

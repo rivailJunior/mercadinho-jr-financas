@@ -157,19 +157,19 @@ export const FinancialActions = ({
       run(
         selecionada.kind === "fatura"
           ? () =>
-            pagarFatura({
-              faturaId: selecionada.id,
-              contaId: pagarContaId,
-              valorCentavos: centavos,
-              descricao,
-            })
+              pagarFatura({
+                faturaId: selecionada.id,
+                contaId: pagarContaId,
+                valorCentavos: centavos,
+                descricao,
+              })
           : () =>
-            pagarCompromisso({
-              compromissoId: selecionada.id,
-              contaId: pagarContaId,
-              valorCentavos: centavos,
-              descricao,
-            }),
+              pagarCompromisso({
+                compromissoId: selecionada.id,
+                contaId: pagarContaId,
+                valorCentavos: centavos,
+                descricao,
+              }),
         "Pagamento registrado!",
       );
     }
