@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { LucideIcon } from "lucide-react";
+import { BadgePercent } from "lucide-react";
 
 interface SummaryCardItemProps {
   label: string;
@@ -10,6 +11,7 @@ interface SummaryCardItemProps {
   subtitleColor: string;
   shadowClass: string;
   icon?: LucideIcon;
+  formatValue?: (value: number) => string;
 }
 
 export const SummaryCardItem = ({
@@ -21,6 +23,7 @@ export const SummaryCardItem = ({
   subtitleColor,
   shadowClass,
   icon: Icon,
+  formatValue = formatCurrency,
 }: SummaryCardItemProps) => (
   <article
     className={`${bgColor} ${shadowClass} flex h-26 flex-col justify-between rounded-3xl p-4 text-white`}
@@ -37,7 +40,7 @@ export const SummaryCardItem = ({
     )}
     <div>
       <p className="tabular-nums text-lg font-black leading-none tracking-tight">
-        {formatCurrency(value)}
+        {formatValue(value)}
       </p>
       <span className={`mt-1 block text-[11px] ${subtitleColor}`}>{subtitle}</span>
     </div>
