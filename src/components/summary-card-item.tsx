@@ -1,6 +1,5 @@
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { LucideIcon } from "lucide-react";
-import { BadgePercent } from "lucide-react";
 
 interface SummaryCardItemProps {
   label: string;
