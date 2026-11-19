@@ -32,67 +32,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      compras_cartao: {
-        Row: {
-          categoria_id: number | null;
-          created_at: string;
-          data_compra: string;
-          deleted_at: string | null;
-          descricao: string | null;
-          estabelecimento_id: string;
-          fatura_id: string | null;
-          id: string;
-          updated_at: string;
-          valor_centavos: number;
-        };
-        Insert: {
-          categoria_id?: number | null;
-          created_at?: string;
-          data_compra: string;
-          deleted_at?: string | null;
-          descricao?: string | null;
-          estabelecimento_id: string;
-          fatura_id?: string | null;
-          id?: string;
-          updated_at?: string;
-          valor_centavos: number;
-        };
-        Update: {
-          categoria_id?: number | null;
-          created_at?: string;
-          data_compra?: string;
-          deleted_at?: string | null;
-          descricao?: string | null;
-          estabelecimento_id?: string;
-          fatura_id?: string | null;
-          id?: string;
-          updated_at?: string;
-          valor_centavos?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "compras_cartao_categoria_id_fkey";
-            columns: ["categoria_id"];
-            isOneToOne: false;
-            referencedRelation: "categorias";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "compras_cartao_estabelecimento_id_fkey";
-            columns: ["estabelecimento_id"];
-            isOneToOne: false;
-            referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "compras_cartao_fatura_id_fkey";
-            columns: ["fatura_id"];
-            isOneToOne: false;
-            referencedRelation: "faturas_cartao";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       compromissos_financeiros: {
         Row: {
           ativo: boolean;
@@ -304,66 +243,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      faturas_cartao: {
-        Row: {
-          created_at: string;
-          deleted_at: string | null;
-          estabelecimento_id: string;
-          fechamento: string;
-          id: string;
-          reserva_id: string | null;
-          status: Database["public"]["Enums"]["fatura_status"];
-          updated_at: string;
-          valor_fechado_centavos: number | null;
-          valor_pago_centavos: number;
-          valor_reservado_centavos: number;
-          vencimento: string;
-        };
-        Insert: {
-          created_at?: string;
-          deleted_at?: string | null;
-          estabelecimento_id: string;
-          fechamento: string;
-          id?: string;
-          reserva_id?: string | null;
-          status?: Database["public"]["Enums"]["fatura_status"];
-          updated_at?: string;
-          valor_fechado_centavos?: number | null;
-          valor_pago_centavos?: number;
-          valor_reservado_centavos?: number;
-          vencimento: string;
-        };
-        Update: {
-          created_at?: string;
-          deleted_at?: string | null;
-          estabelecimento_id?: string;
-          fechamento?: string;
-          id?: string;
-          reserva_id?: string | null;
-          status?: Database["public"]["Enums"]["fatura_status"];
-          updated_at?: string;
-          valor_fechado_centavos?: number | null;
-          valor_pago_centavos?: number;
-          valor_reservado_centavos?: number;
-          vencimento?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "faturas_cartao_estabelecimento_id_fkey";
-            columns: ["estabelecimento_id"];
-            isOneToOne: false;
-            referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "faturas_cartao_reserva_id_fkey";
-            columns: ["reserva_id"];
-            isOneToOne: false;
-            referencedRelation: "reservas_financeiras";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       movimentacoes_financeiras: {
         Row: {
           afeta_saldo: boolean;
@@ -375,7 +254,6 @@ export type Database = {
           deleted_at: string | null;
           descricao: string | null;
           estabelecimento_id: string;
-          fatura_id: string | null;
           forma_pagamento: string | null;
           id: string;
           natureza: Database["public"]["Enums"]["movimento_natureza"];
@@ -396,7 +274,6 @@ export type Database = {
           deleted_at?: string | null;
           descricao?: string | null;
           estabelecimento_id: string;
-          fatura_id?: string | null;
           forma_pagamento?: string | null;
           id?: string;
           natureza?: Database["public"]["Enums"]["movimento_natureza"];
@@ -417,7 +294,6 @@ export type Database = {
           deleted_at?: string | null;
           descricao?: string | null;
           estabelecimento_id?: string;
-          fatura_id?: string | null;
           forma_pagamento?: string | null;
           id?: string;
           natureza?: Database["public"]["Enums"]["movimento_natureza"];
@@ -462,13 +338,6 @@ export type Database = {
             columns: ["estabelecimento_id"];
             isOneToOne: false;
             referencedRelation: "estabelecimentos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "movimentacoes_financeiras_fatura_id_fkey";
-            columns: ["fatura_id"];
-            isOneToOne: false;
-            referencedRelation: "faturas_cartao";
             referencedColumns: ["id"];
           },
           {
@@ -768,17 +637,6 @@ export type Database = {
         };
         Returns: undefined;
       };
-      pagar_fatura: {
-        Args: {
-          p_conta_id: string;
-          p_data_referencia?: string;
-          p_descricao?: string;
-          p_estabelecimento_id: string;
-          p_fatura_id: string;
-          p_valor_centavos: number;
-        };
-        Returns: undefined;
-      };
       proximo_vencimento: {
         Args: { p_base: string; p_dia: number };
         Returns: string;
@@ -819,7 +677,6 @@ export type Database = {
         | "VENCIDO"
         | "PARCIALMENTE_PAGO";
       conta_tipo: "CAIXA_FISICO" | "MAQUININHA" | "BANCO";
-      fatura_status: "ABERTA" | "FECHADA" | "PARCIALMENTE_PAGA" | "PAGA" | "VENCIDA";
       movimento_natureza:
         | "OPERACIONAL"
         | "TRANSFERENCIA"
@@ -963,7 +820,6 @@ export const Constants = {
         "PARCIALMENTE_PAGO",
       ],
       conta_tipo: ["CAIXA_FISICO", "MAQUININHA", "BANCO"],
-      fatura_status: ["ABERTA", "FECHADA", "PARCIALMENTE_PAGA", "PAGA", "VENCIDA"],
       movimento_natureza: [
         "OPERACIONAL",
         "TRANSFERENCIA",

@@ -15,9 +15,6 @@ export type CompromissoStatus =
   | "PAGO"
   | "VENCIDO";
 
-/** Status of a credit-card invoice cycle. */
-export type FaturaStatus = "ABERTA" | "FECHADA" | "PARCIALMENTE_PAGA" | "PAGA" | "VENCIDA";
-
 /**
  * A financial account — a *location* of money (caixa físico, maquininha, bank).
  * The current balance is always derived: saldoInicial + Σ movimentos.
@@ -66,24 +63,4 @@ export interface Compromisso {
   vencimento: string;
   prioridade: number;
   status: CompromissoStatus;
-}
-
-/** A credit-card invoice cycle. The reserve may accumulate across cycles. */
-export interface Fatura {
-  id: string;
-  /** Closing date (ISO YYYY-MM-DD). */
-  fechamento: string;
-  /** Due date (ISO YYYY-MM-DD) — typically day 20. */
-  vencimento: string;
-  /** Running total of purchases in the cycle (before it closes). */
-  valorAtual: Cents;
-  /** Expected cycle total: closed amount, else the larger of the linked reserve's meta and the running purchases. */
-  valorEsperado: Cents;
-  /** The amount locked in once the cycle closes. */
-  valorFechado?: Cents;
-  /** Amount reserved for this invoice (may carry over between cycles). */
-  valorReservado: Cents;
-  /** Amount already paid toward this invoice. */
-  valorPago: Cents;
-  status: FaturaStatus;
 }

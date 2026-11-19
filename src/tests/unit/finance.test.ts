@@ -1,17 +1,13 @@
 import {
   type Compromisso,
   type Conta,
-  type Fatura,
   type Movimento,
   type Reserva,
   faltaReservar,
-  faltaReservarFatura,
-  pagarFatura,
   posicaoFinanceira,
   saldoConsolidado,
   saldoConta,
   transferenciaParaMovimentos,
-  transportarReserva,
 } from "@/lib/finance";
 import { reaisToCents } from "@/lib/money";
 
@@ -57,45 +53,6 @@ describe("Cenário B — reservas iniciais", () => {
   });
 });
 
-describe("Cenário C — fatura do cartão", () => {
-  test("necessidade adicional = valor devido - reservado", () => {
-    const fatura: Fatura = {
-      id: "f1",
-      fechamento: "2026-01-10",
-      vencimento: "2026-01-20",
-      valorAtual: R(15000),
-      valorEsperado: R(15000),
-      valorFechado: R(15000),
-      valorReservado: R(10000),
-      valorPago: 0,
-      status: "FECHADA",
-    };
-    expect(faltaReservarFatura(fatura)).toBe(R(5000));
-  });
-});
-
-describe("Cenário D — pagamento da fatura sem dupla despesa", () => {
-  test("pagar a fatura liquida a obrigação e não gera nova despesa operacional", () => {
-    const fatura: Fatura = {
-      id: "f1",
-      fechamento: "2026-01-10",
-      vencimento: "2026-01-20",
-      valorAtual: R(15000),
-      valorEsperado: R(15000),
-      valorFechado: R(15000),
-      valorReservado: R(15000),
-      valorPago: 0,
-      status: "FECHADA",
-    };
-    const paga = pagarFatura(fatura, R(15000));
-    expect(paga.status).toBe("PAGA");
-    expect(paga.valorPago).toBe(R(15000));
-    // A liquidação consome a reserva, mas as compras já eram a despesa:
-    // nenhuma SAIDA operacional adicional é criada por esta função.
-    expect(paga.valorReservado).toBe(0);
-  });
-});
-
 describe("Cenário E — transferência interna", () => {
   test("move dinheiro entre contas sem alterar o consolidado", () => {
     const contas = [conta("caixa", 3000), conta("maquininha", 2000, "MAQUININHA")];
@@ -107,34 +64,6 @@ describe("Cenário E — transferência interna", () => {
     expect(saldoConta(contas[0], movs)).toBe(R(2000));
     expect(saldoConta(contas[1], movs)).toBe(R(3000));
     expect(saldoConsolidado(contas, movs)).toBe(R(5000));
-  });
-});
-
-describe("Cenário H — reserva acumulada entre ciclos", () => {
-  test("transporta o saldo excedente para o próximo ciclo, sem zerar", () => {
-    const anterior: Fatura = {
-      id: "f1",
-      fechamento: "2026-01-10",
-      vencimento: "2026-01-20",
-      valorAtual: R(15000),
-      valorEsperado: R(15000),
-      valorFechado: R(15000),
-      valorReservado: R(5000), // sobra após pagar
-      valorPago: R(15000),
-      status: "PAGA",
-    };
-    const nova: Fatura = {
-      id: "f2",
-      fechamento: "2026-02-10",
-      vencimento: "2026-02-20",
-      valorAtual: 0,
-      valorEsperado: 0,
-      valorReservado: 0,
-      valorPago: 0,
-      status: "ABERTA",
-    };
-    const transportada = transportarReserva(anterior, nova);
-    expect(transportada.valorReservado).toBe(R(5000));
   });
 });
 

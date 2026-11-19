@@ -2,7 +2,6 @@ import { monthBounds, todayISODate } from "@/lib/dates";
 import {
   type Compromisso,
   type Conta,
-  type Fatura,
   type PosicaoFinanceira,
   type ProvisaoResult,
   type Reserva,
@@ -49,7 +48,6 @@ export interface PainelFinanceiro {
   contas: (Conta & { saldoAtual: Cents })[];
   reservas: (Reserva & { metaEfetiva: Cents | null })[];
   compromissos: Compromisso[];
-  faturas: Fatura[];
   movimentosReserva: MovimentoReserva[];
   transferencias: Transferencia[];
   pagamentos: Pagamento[];
@@ -84,7 +82,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     { data: saldos },
     { data: reservasRows },
     { data: compromissosRows },
-    { data: faturasRows },
     { data: movReservaRows },
     { data: transferenciasRows },
     { data: pagamentosRows },
@@ -102,13 +99,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       .from("compromissos_financeiros")
       .select(
         "id, nome, valor_previsto_centavos, valor_efetivo_centavos, valor_pago_centavos, prioridade, vencimento, status, reserva_id",
-      )
-      .eq("estabelecimento_id", estabelecimentoId)
-      .is("deleted_at", null),
-    supabase
-      .from("faturas_cartao")
-      .select(
-        "id, fechamento, vencimento, valor_fechado_centavos, valor_reservado_centavos, valor_pago_centavos, status, reserva_id, compras_cartao(valor_centavos)",
       )
       .eq("estabelecimento_id", estabelecimentoId)
       .is("deleted_at", null),
@@ -174,14 +164,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     if (c.status !== "PAGO")
       addMeta(c.reserva_id, c.valor_efetivo_centavos ?? c.valor_previsto_centavos);
   }
-  for (const f of faturasRows ?? []) {
-    if (f.status !== "PAGA" && f.status !== "VENCIDA")
-      addMeta(
-        f.reserva_id,
-        f.valor_fechado_centavos ??
-          (f.compras_cartao ?? []).reduce((acc, c) => acc + (c.valor_centavos ?? 0), 0),
-      );
-  }
 
   const reservas = (reservasRows ?? []).map((r) => ({
     id: r.id,
@@ -198,7 +180,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   // due date). An aporte into the reserve immediately raises each share, up
   // to that daily-rhythm target.
   type CompromissoRow = NonNullable<typeof compromissosRows>[number];
-  type FaturaRow = NonNullable<typeof faturasRows>[number];
   const reservaSaldo = new Map(reservas.map((r) => [r.id, r.valorAtual]));
   const hoje = todayISODate();
   const fimMes = monthBounds(hoje.slice(0, 7)).end;
@@ -208,21 +189,12 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       0,
       (r.valor_efetivo_centavos ?? r.valor_previsto_centavos) - (r.valor_pago_centavos ?? 0),
     );
-  const cicloAbertoDe = (f: FaturaRow): Cents =>
-    (f.compras_cartao ?? []).reduce((acc, c) => acc + (c.valor_centavos ?? 0), 0);
-  const metaReservaDe = (f: FaturaRow): Cents =>
-    reservas.find((r) => r.id === f.reserva_id)?.meta ?? 0;
   // Each bill accrues its daily rate (valor ÷ 30) per day elapsed in the
   // current cycle — i.e. since the day after the previous due date. A bill
   // due on the 6th has accrued 3 daily installments on the 9th.
   const acumuladoCompromisso = (r: CompromissoRow): Cents => {
     const total = r.valor_efetivo_centavos ?? r.valor_previsto_centavos;
     return Math.min(pendenteDe(r), acumuladoCiclo(total, r.vencimento ?? fimMes, hoje));
-  };
-  const acumuladoFatura = (f: FaturaRow): Cents => {
-    const esperado = f.valor_fechado_centavos ?? Math.max(metaReservaDe(f), cicloAbertoDe(f));
-    const pendente = Math.max(0, esperado - (f.valor_pago_centavos ?? 0));
-    return Math.min(pendente, acumuladoCiclo(esperado, f.vencimento, hoje));
   };
 
   interface Obrigacao {
@@ -239,10 +211,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   for (const row of compromissosRows ?? []) {
     if (row.status === "PAGO") continue;
     addObrigacao(row.reserva_id, { key: `comp:${row.id}`, alvo: acumuladoCompromisso(row) });
-  }
-  for (const f of faturasRows ?? []) {
-    if (f.status === "PAGA" || f.status === "VENCIDA") continue;
-    addObrigacao(f.reserva_id, { key: `fatura:${f.id}`, alvo: acumuladoFatura(f) });
   }
 
   const reservadoPorObrigacao = new Map<string, Cents>();
@@ -286,24 +254,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     return { ...base, status: derivarStatus(base, hoje) };
   });
 
-  const faturas: Fatura[] = (faturasRows ?? []).map((f) => {
-    // Open cycles have no closed amount yet — the running total is the sum of
-    // the card purchases registered in the cycle.
-    const cicloAberto = cicloAbertoDe(f);
-    const metaReserva = metaReservaDe(f);
-    return {
-      id: f.id,
-      fechamento: f.fechamento,
-      vencimento: f.vencimento,
-      valorAtual: f.valor_fechado_centavos ?? cicloAberto,
-      valorEsperado: f.valor_fechado_centavos ?? Math.max(metaReserva, cicloAberto),
-      valorFechado: f.valor_fechado_centavos ?? undefined,
-      valorReservado: reservadoPorObrigacao.get(`fatura:${f.id}`) ?? 0,
-      valorPago: f.valor_pago_centavos,
-      status: f.status,
-    };
-  });
-
   // The consolidated balance comes straight from the derived view; pass an
   // empty movements list so we don't double-count them on top of saldo_atual.
   const posicao = posicaoFinanceira(contas, [], reservas);
@@ -342,7 +292,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     contas,
     reservas,
     compromissos,
-    faturas,
     movimentosReserva,
     transferencias,
     pagamentos,
@@ -390,44 +339,41 @@ export const getProvisaoDiaria = async (
 
   const hoje = todayISODate();
 
-  // The card bucket's reserve comes from the fatura's reserva_id link; the
-  // compromissos bucket's reserve comes from the compromissos' reserva_id.
-  const faturaAberta = painel.faturas.find(
-    (f) => f.status === "ABERTA" || f.status === "FECHADA" || f.status === "PARCIALMENTE_PAGA",
-  );
-  const [
-    { data: faturaRow },
-    { data: compromissoLinks },
-    { data: resumoHoje },
-    { data: aportesHoje },
-  ] = await Promise.all([
-    faturaAberta
-      ? supabase.from("faturas_cartao").select("reserva_id").eq("id", faturaAberta.id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from("compromissos_financeiros")
-      .select("reserva_id")
-      .eq("estabelecimento_id", estabelecimentoId)
-      .is("deleted_at", null),
-    // Same "Livre de Verdade" the Caixa de Hoje tab shows:
-    // faturamento × margem bruta − custo fixo diário, in reais.
-    supabase
-      .from("view_resumo_diario")
-      .select("lucro_liquido_dia")
-      .eq("data_referencia", hoje)
-      .maybeSingle(),
-    supabase
-      .from("movimentacoes_reservas")
-      .select("reserva_id, valor_centavos")
-      .eq("estabelecimento_id", estabelecimentoId)
-      .eq("tipo", "APORTE")
-      .eq("data_referencia", hoje),
-  ]);
+  // The card bucket is the reserve named "Fatura do cartão" and the
+  // compromissos linked to it; everything else goes to the bills bucket.
+  const reservaCartao = painel.reservas.find((r) => /cart/i.test(r.nome));
+  const [{ data: compromissoLinks }, { data: resumoHoje }, { data: aportesHoje }] =
+    await Promise.all([
+      supabase
+        .from("compromissos_financeiros")
+        .select("id, reserva_id")
+        .eq("estabelecimento_id", estabelecimentoId)
+        .is("deleted_at", null),
+      // Same "Livre de Verdade" the Caixa de Hoje tab shows:
+      // faturamento × margem bruta − custo fixo diário, in reais.
+      supabase
+        .from("view_resumo_diario")
+        .select("lucro_liquido_dia")
+        .eq("data_referencia", hoje)
+        .maybeSingle(),
+      supabase
+        .from("movimentacoes_reservas")
+        .select("reserva_id, valor_centavos")
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo", "APORTE")
+        .eq("data_referencia", hoje),
+    ]);
 
   const reservaById = new Map(painel.reservas.map((r) => [r.id, r]));
-  const reservaCartao = faturaRow?.reserva_id ? reservaById.get(faturaRow.reserva_id) : undefined;
+  const cartaoCompromissoIds = new Set(
+    (compromissoLinks ?? [])
+      .filter((c) => c.reserva_id != null && c.reserva_id === reservaCartao?.id)
+      .map((c) => c.id),
+  );
   const reservaCompromissosIds = new Set(
-    (compromissoLinks ?? []).map((c) => c.reserva_id).filter((id): id is string => id != null),
+    (compromissoLinks ?? [])
+      .map((c) => c.reserva_id)
+      .filter((id): id is string => id != null && id !== reservaCartao?.id),
   );
   const reservadoCompromissos = [...reservaCompromissosIds].reduce(
     (acc, id) => acc + (reservaById.get(id)?.valorAtual ?? 0),
@@ -448,14 +394,16 @@ export const getProvisaoDiaria = async (
   const jaGuardouHoje = aportesFixasHoje.length > 0;
   const guardadoHoje = aportesFixasHoje.reduce((acc, m) => acc + (m.valor_centavos ?? 0), 0);
 
-  // Expected invoice: closed amount when the cycle is closed; otherwise the
-  // larger of the reserve's meta and the running purchases total.
-  const esperadoCartao = faturaAberta?.valorEsperado ?? 0;
+  // The card bill is a monthly compromisso like the others: previsto is the
+  // reference amount and efetivo carries this cycle's real invoice once set.
+  const esperadoCartao = painel.compromissos
+    .filter((c) => c.status !== "PAGO" && cartaoCompromissoIds.has(c.id))
+    .reduce((acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto), 0);
   const reservadoCartao = reservaCartao?.valorAtual ?? 0;
   const faltaCartao = Math.max(0, esperadoCartao - reservadoCartao);
 
   const totalCompromissos = painel.compromissos
-    .filter((c) => c.status !== "PAGO")
+    .filter((c) => c.status !== "PAGO" && !cartaoCompromissoIds.has(c.id))
     .reduce((acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto), 0);
   const faltaCompromissos = Math.max(0, totalCompromissos - reservadoCompromissos);
 

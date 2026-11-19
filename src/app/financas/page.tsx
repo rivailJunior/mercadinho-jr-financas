@@ -23,7 +23,6 @@ export default async function FinancasPage() {
             <FinancialActions
               contas={painel.contas}
               reservas={painel.reservas}
-              faturas={painel.faturas}
               compromissos={painel.compromissos}
             />
             <OperationsHistoryCard

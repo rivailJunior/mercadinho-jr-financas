@@ -1,6 +1,4 @@
 import { SummaryCardItem } from "@/components/summary-card-item";
-import { todayISODate } from "@/lib/dates";
-import { type Compromisso, derivarStatus } from "@/lib/finance";
 import type { PainelFinanceiro } from "@/lib/finance/data";
 import { formatCents } from "@/lib/money";
 import { BadgePercent, CalendarClock, Landmark, PiggyBank, Wallet } from "lucide-react";
@@ -10,7 +8,7 @@ interface FinancialDashboardProps {
 }
 
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, compromissos, faturas, adiantadoFixas } = painel;
+  const { posicao, contas, reservas, compromissos, adiantadoFixas } = painel;
 
   const contasFixasComercio = painel.contas.filter((item) => {
     if (item.tipo === "BANCO") {
@@ -22,28 +20,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   // show — hide them so the "Adiantado" line can take their place.
   const reservasVisiveis = reservas.filter((r) => r.valorAtual > 0 || r.metaEfetiva != null);
   const livre = posicao.saldoLivre;
-  const hoje = todayISODate();
-  // The card invoice is a fixed monthly bill like the others: its reserved
-  // amount comes from the linked reserve's balance, capped by what it owes.
-  const itensFatura: Compromisso[] = faturas
-    .filter((f) => f.status !== "PAGA")
-    .map((f) => {
-      const total = f.valorEsperado;
-      const base: Compromisso = {
-        id: `fatura-${f.id}`,
-        nome: "Fatura do cartão",
-        valorPrevisto: total,
-        valorReservado: f.valorReservado,
-        valorPago: f.valorPago,
-        vencimento: f.vencimento,
-        prioridade: 0,
-        status: "PENDENTE",
-      };
-      return { ...base, status: derivarStatus(base, hoje) };
-    });
-  const contasFixas = [...compromissos, ...itensFatura].sort((a, b) =>
-    a.vencimento.localeCompare(b.vencimento),
-  );
+  const contasFixas = [...compromissos].sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 
   const totalPrevisto = contasFixas.reduce(
     (acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto),

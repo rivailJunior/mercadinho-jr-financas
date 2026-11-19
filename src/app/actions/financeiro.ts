@@ -273,33 +273,3 @@ export async function pagarCompromisso(input: {
   });
   return err(error);
 }
-
-// --- Fatura do cartão ---------------------------------------------------------
-
-export async function pagarFatura(input: {
-  faturaId: string;
-  contaId: string;
-  valorCentavos: number;
-  descricao?: string;
-}): Promise<SaveResult> {
-  const schema = z.object({
-    faturaId: uuidSchema,
-    contaId: uuidSchema,
-    valorCentavos: centsSchema,
-    descricao: z.string().optional(),
-  });
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Dados de pagamento inválidos." };
-  const supabase = await createSupabaseClient();
-  const estabelecimentoId = await getEstabelecimentoId();
-  if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
-  const { error } = await supabase.rpc("pagar_fatura", {
-    p_estabelecimento_id: estabelecimentoId,
-    p_fatura_id: parsed.data.faturaId,
-    p_conta_id: parsed.data.contaId,
-    p_valor_centavos: assertCents(parsed.data.valorCentavos),
-    p_data_referencia: todayISODate(),
-    p_descricao: parsed.data.descricao?.trim() || undefined,
-  });
-  return err(error);
-}

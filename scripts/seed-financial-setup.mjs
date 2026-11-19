@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
  * Usage (loads .env automatically):
  *   node scripts/seed-financial-setup.mjs \
  *     --caixa 5000 --maquininha 7213 \
- *     [--caixa-minimo 2500] [--fatura-fechamento 2026-01-10] [--fatura-vencimento 2026-01-20] \
+ *     [--caixa-minimo 2500] [--fatura-vencimento 2026-01-20] [--fatura-previsto 15000] \
  *     [--write]
  *
  * Without --write it only prints what would be created (dry-run).
@@ -243,19 +243,23 @@ if (caixaMinimo > 0) {
   else console.log(`Caixa mínimo: R$ ${(caixaMinimo / 100).toFixed(2)}`);
 }
 
-// Fatura inicial do ciclo atual, se datas informadas.
-if (args["fatura-fechamento"] && args["fatura-vencimento"]) {
+// Compromisso "Fatura do cartão" do ciclo atual, se o vencimento foi informado.
+if (args["fatura-vencimento"]) {
   const reservaCartao = reservasInsert.find((r) => r.nome === "Fatura do cartão");
-  const { error: fErr } = await supabase.from("faturas_cartao").insert({
+  const vencimento = args["fatura-vencimento"];
+  const { error: fErr } = await supabase.from("compromissos_financeiros").insert({
     estabelecimento_id: estId,
+    nome: "Fatura do cartão",
     reserva_id: reservaCartao?.id ?? null,
-    fechamento: args["fatura-fechamento"],
-    vencimento: args["fatura-vencimento"],
-    valor_reservado_centavos: reservaCartao ? 1000000 : 0,
-    status: "ABERTA",
+    valor_previsto_centavos: reais("fatura-previsto") ?? 0,
+    periodicidade: "MENSAL",
+    vencimento,
+    dia_vencimento: Number(vencimento.slice(8, 10)),
+    prioridade: 0,
+    status: "PENDENTE",
   });
-  if (fErr) console.warn("Não foi possível criar a fatura inicial:", fErr.message);
-  else console.log("Fatura inicial do ciclo criada.");
+  if (fErr) console.warn("Não foi possível criar o compromisso da fatura:", fErr.message);
+  else console.log("Compromisso da fatura do cartão criado.");
 }
 
 console.log("\nConfiguração inicial concluída.");

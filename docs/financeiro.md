@@ -38,17 +38,16 @@ derivado dos movimentos reais (`movimentacoes_financeiras`).
 
 Três conceitos distintos:
 
-- **Despesa** — reconhecida na `compras_cartao` quando a compra acontece
-  (competência), ou numa movimentação `SAIDA`/`OPERACIONAL` quando o gasto
-  sai direto do caixa.
-- **Obrigação** — `compromissos_financeiros` (contas a pagar) e
-  `faturas_cartao` (ciclo do cartão).
+- **Despesa** — uma movimentação `SAIDA`/`OPERACIONAL` quando o gasto sai
+  direto do caixa.
+- **Obrigação** — `compromissos_financeiros` (contas a pagar). A fatura do
+  cartão é um compromisso MENSAL como os demais: `valor_previsto` é a
+  referência e `valor_efetivo` carrega o valor real da fatura do mês.
 - **Liquidação** — pagamento da obrigação. Gera movimento de caixa com
-  natureza `LIQUIDACAO_FATURA` ou `LIQUIDACAO_COMPROMISSO` — nunca uma nova
-  despesa.
+  natureza `LIQUIDACAO_COMPROMISSO` — nunca uma nova despesa.
 
-Pagar a fatura do cartão **não** é despesa: as compras já foram reconhecidas
-em `compras_cartao`. O pagamento movimenta dinheiro e baixa a obrigação.
+Pagar a fatura do cartão **não** é despesa: o pagamento movimenta dinheiro
+e baixa a obrigação (`LIQUIDACAO_COMPROMISSO`).
 
 ## Operações e efeitos
 
@@ -59,7 +58,7 @@ em `compras_cartao`. O pagamento movimenta dinheiro e baixa a obrigação.
 | Aporte em reserva            | RPC `aportar_reserva`                                      | **não altera** (só destina) |
 | Retirada de reserva          | RPC `retirar_reserva`                                      | **não altera**              |
 | Transferência entre reservas | RPC `transferir_entre_reservas`                            | **não altera**              |
-| Pagar fatura                 | RPC `pagar_fatura` (movimento `LIQUIDACAO_FATURA` + baixa) | reduz (liquidação)          |
+| Pagar fatura do cartão       | RPC `pagar_compromisso` (movimento `LIQUIDACAO_COMPROMISSO`) | reduz (liquidação)      |
 
 Todas as RPCs validam valor positivo, existência das entidades e saldo
 suficiente, executam dentro de uma única transação (erro → rollback total)
@@ -67,9 +66,9 @@ e serializam concorrência travando a linha da conta/reserva.
 
 ## Reservas não zeram automaticamente
 
-A reserva do cartão **acumula entre ciclos**: pagar a fatura consome
-`valor_reservado_centavos` da fatura, mas o excedente fica na reserva para o
-próximo ciclo. Nada zera reserva no fim do mês.
+A reserva do cartão **acumula entre ciclos**: pagar a fatura libera o
+earmark da reserva vinculada até o valor pago, mas o excedente fica na
+reserva para o próximo ciclo. Nada zera reserva no fim do mês.
 
 ## Compromissos são ciclos mensais recorrentes
 
@@ -117,8 +116,8 @@ Roteamento de conta:
 `provisaoDiaria` (função pura em `src/lib/finance/provision.ts`), servida por
 `getProvisaoDiaria` em `data.ts` e exibida no card da home:
 
-1. `ritmoCartao = faltaCartao ÷ diasAteFechamento` — a fatura precisa estar
-   provisionada até o **fechamento** do ciclo (campo informativo).
+1. `ritmoCartao = faltaCartao ÷ 30` — a fatura (compromisso MENSAL ligado à
+   reserva do cartão) provisiona `valor ÷ 30` por dia (campo informativo).
 2. `ritmoCompromissos = faltaCompromissos ÷ 30` — cada conta mensal
    provisiona `valor ÷ 30` por dia, independente do vencimento (campo
    informativo).
@@ -144,10 +143,9 @@ chama `aportar_reserva` por bucket — a sugestão da tela nunca é confiada.
   operacional).
 - Os R$ 12.213 foram registrados como `saldo_inicial` das contas —
   **não** como receita nova.
-- Compromissos mensais: cartão ~R$ 15.000, pró-labore R$ 2.000,
-  funcionários R$ 2.000, água R$ 500, energia R$ 900, reserva financeira
-  R$ 1.000.
-- Ciclo do cartão: fecha dia 14, vence dia 20.
+- Compromissos mensais: fatura do cartão (previsto ~R$ 15.000, vence dia
+  20), pró-labore R$ 2.000, funcionários R$ 2.000, água R$ 500, energia
+  R$ 900, reserva financeira R$ 1.000.
 - Seed reproduzível: `node scripts/seed-financial-setup.mjs --caixa 1850 --maquininha 10363 --write`.
 
 ## Segurança

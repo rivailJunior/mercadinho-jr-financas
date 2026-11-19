@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  aportarReserva,
-  criarTransferencia,
-  pagarCompromisso,
-  pagarFatura,
-} from "@/app/actions/financeiro";
+import { aportarReserva, criarTransferencia, pagarCompromisso } from "@/app/actions/financeiro";
 import { CurrencyInput } from "@/components/currency-input";
 import { SelectField } from "@/components/select-field";
 import { Toast, type ToastMessage } from "@/components/toast";
-import type { Compromisso, Conta, Fatura, Reserva } from "@/lib/finance";
+import type { Compromisso, Conta, Reserva } from "@/lib/finance";
 import { formatCents, reaisToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { ArrowLeftRight, CheckCircle, ChevronDown, PiggyBank, ReceiptText } from "lucide-react";
@@ -24,10 +19,9 @@ const ACOES: { id: Acao; label: string; icon: typeof ArrowLeftRight }[] = [
   { id: "pagar", label: "Pagar conta", icon: ReceiptText },
 ];
 
-/** A payable obligation — a card invoice or a monthly fixed commitment. */
+/** A payable obligation — a monthly fixed commitment (card invoice included). */
 interface Obrigacao {
   key: string;
-  kind: "fatura" | "compromisso";
   id: string;
   label: string;
   pendente: number;
@@ -36,7 +30,6 @@ interface Obrigacao {
 interface FinancialActionsProps {
   contas: (Conta & { saldoAtual: number })[];
   reservas: Reserva[];
-  faturas: Fatura[];
   compromissos: Compromisso[];
 }
 
@@ -47,12 +40,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
-export const FinancialActions = ({
-  contas,
-  reservas,
-  faturas,
-  compromissos,
-}: FinancialActionsProps) => {
+export const FinancialActions = ({ contas, reservas, compromissos }: FinancialActionsProps) => {
   const router = useRouter();
   const [acao, setAcao] = useState<Acao>("transferencia");
   const [open, setOpen] = useState(false);
@@ -74,32 +62,19 @@ export const FinancialActions = ({
 
   const obrigacoes = useMemo<Obrigacao[]>(() => {
     const list: Obrigacao[] = [];
-    for (const f of faturas) {
-      if (f.status === "PAGA" || f.status === "VENCIDA") continue;
-      const pendente = (f.valorFechado ?? f.valorAtual) - f.valorPago;
-      if (pendente <= 0) continue;
-      list.push({
-        key: `fatura:${f.id}`,
-        kind: "fatura",
-        id: f.id,
-        label: `Fatura do cartão · vence ${f.vencimento} · falta ${formatCents(pendente)}`,
-        pendente,
-      });
-    }
     for (const c of compromissos) {
       if (c.status === "PAGO") continue;
       const pendente = (c.valorEfetivo ?? c.valorPrevisto) - c.valorPago;
       if (pendente <= 0) continue;
       list.push({
         key: `comp:${c.id}`,
-        kind: "compromisso",
         id: c.id,
         label: `${c.nome} · falta ${formatCents(pendente)}`,
         pendente,
       });
     }
     return list;
-  }, [faturas, compromissos]);
+  }, [compromissos]);
 
   const centavos = reaisToCents(valor);
 
@@ -155,21 +130,13 @@ export const FinancialActions = ({
           message: "Escolha a conta a pagar e a conta de origem.",
         });
       run(
-        selecionada.kind === "fatura"
-          ? () =>
-              pagarFatura({
-                faturaId: selecionada.id,
-                contaId: pagarContaId,
-                valorCentavos: centavos,
-                descricao,
-              })
-          : () =>
-              pagarCompromisso({
-                compromissoId: selecionada.id,
-                contaId: pagarContaId,
-                valorCentavos: centavos,
-                descricao,
-              }),
+        () =>
+          pagarCompromisso({
+            compromissoId: selecionada.id,
+            contaId: pagarContaId,
+            valorCentavos: centavos,
+            descricao,
+          }),
         "Pagamento registrado!",
       );
     }
