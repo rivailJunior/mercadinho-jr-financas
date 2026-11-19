@@ -44,7 +44,7 @@ export const DailySummaryCard = ({ summary }: DailySummaryCardProps) => {
             label="Lucro do dia"
             value={summary.sobraLimpa}
             subtitle="Usar para contas fixas"
-            bgColor="bg-brand-deep-purple"
+            bgColor="bg-brand-blue"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
             shadowClass="shadow-card-purple"

@@ -32,7 +32,7 @@ const NavItemContent = ({
     <div
       className={cn(
         "flex flex-1 flex-col items-center gap-1 py-1",
-        isActive ? "bg-indigo-600 rounded-lg" : "text-slate-400",
+        isActive ? "bg-brand-blue rounded-lg" : "text-slate-400",
       )}
     >
       <Icon className={`h-6 w-6 stroke-2 ${isActive ? "text-white" : ""}`} />

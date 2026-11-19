@@ -66,7 +66,7 @@ export const ContaSelector = <T extends string>({
           aria-pressed={value === op.id}
           className={cn(
             "rounded-xl px-3 py-2.5 text-xs font-bold transition-all",
-            value === op.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500",
+            value === op.id ? "bg-brand-blue text-white" : "bg-slate-100 text-slate-500",
           )}
         >
           {op.label}
