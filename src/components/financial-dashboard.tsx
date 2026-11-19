@@ -33,8 +33,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const pctAtingido = totalPrevisto > 0 ? saldoComercio / totalPrevisto : 0;
   const faltaComercio = Math.max(0, totalPrevisto - saldoComercio);
 
-
-
   return (
     <div className="space-y-6">
       {/* Posição consolidada */}
