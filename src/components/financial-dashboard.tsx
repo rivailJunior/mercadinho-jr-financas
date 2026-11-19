@@ -10,7 +10,7 @@ interface FinancialDashboardProps {
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const { posicao, contas, reservas, compromissos, adiantadoFixas } = painel;
 
-  const contasFixasComercio = painel.contas.filter((item) => {
+  const contaTon = painel.contas.filter((item) => {
     if (item.tipo === "BANCO") {
       return item;
     }
@@ -29,9 +29,11 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
 
   const totalArrecadado = contasFixas.reduce((acc, c) => acc + c.valorReservado + c.valorPago, 0);
 
-  const saldoComercio = contasFixasComercio ?? 0;
+  const saldoComercio = contaTon ?? 0;
   const pctAtingido = totalPrevisto > 0 ? saldoComercio / totalPrevisto : 0;
   const faltaComercio = Math.max(0, totalPrevisto - saldoComercio);
+
+
 
   return (
     <div className="space-y-6">
@@ -89,8 +91,8 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           />
           <SummaryCardItem
             label="Total Reservado"
-            value={posicao.totalReservado / 100}
-            subtitle="Conta Ton - Contas Fixas"
+            value={saldoComercio / 100}
+            subtitle="Conta Ton"
             bgColor="bg-brand-blue"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
