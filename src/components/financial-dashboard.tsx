@@ -10,8 +10,6 @@ interface FinancialDashboardProps {
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const { posicao, contas, reservas, compromissos, adiantadoFixas } = painel;
 
-  console.log(painel);
-
   const contaTon = painel.contas.filter((item) => {
     if (item.tipo === "BANCO") {
       return item;
@@ -37,7 +35,6 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
 
   const totalSaldo = contas.reduce((acc, c) => acc + c.saldoAtual, 0);
   const saldoLivreDoDia = (totalSaldo - saldoComercio) / 100;
-
 
   return (
     <div className="space-y-6">
