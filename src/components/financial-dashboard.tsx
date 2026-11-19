@@ -10,6 +10,8 @@ interface FinancialDashboardProps {
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const { posicao, contas, reservas, compromissos, adiantadoFixas } = painel;
 
+  console.log(painel);
+
   const contaTon = painel.contas.filter((item) => {
     if (item.tipo === "BANCO") {
       return item;
@@ -19,7 +21,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   // Reserves with nothing saved and no linked obligation have nothing to
   // show — hide them so the "Adiantado" line can take their place.
   const reservasVisiveis = reservas.filter((r) => r.valorAtual > 0 || r.metaEfetiva != null);
-  const livre = posicao.saldoLivre;
+
   const contasFixas = [...compromissos].sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 
   const totalPrevisto = contasFixas.reduce(
@@ -32,6 +34,10 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
   const saldoComercio = contaTon ?? 0;
   const pctAtingido = totalPrevisto > 0 ? saldoComercio / totalPrevisto : 0;
   const faltaComercio = Math.max(0, totalPrevisto - saldoComercio);
+
+  const totalSaldo = contas.reduce((acc, c) => acc + c.saldoAtual, 0);
+  const saldoLivreDoDia = (totalSaldo - saldoComercio) / 100;
+
 
   return (
     <div className="space-y-6">
@@ -100,12 +106,12 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           <div className="col-span-2">
             <SummaryCardItem
               label="Saldo livre do dia"
-              value={livre / 100}
+              value={saldoLivreDoDia}
               subtitle="Caixa Fisico + Maquininha"
-              bgColor={livre >= 0 ? "bg-brand-mint" : "bg-brand-coral"}
-              labelColor={livre >= 0 ? "text-emerald-100" : "text-rose-100"}
-              subtitleColor={livre >= 0 ? "text-emerald-100" : "text-rose-200"}
-              shadowClass={livre >= 0 ? "shadow-card-mint" : "shadow-card-coral"}
+              bgColor={saldoLivreDoDia >= 0 ? "bg-brand-mint" : "bg-brand-coral"}
+              labelColor={saldoLivreDoDia >= 0 ? "text-emerald-100" : "text-rose-100"}
+              subtitleColor={saldoLivreDoDia >= 0 ? "text-emerald-100" : "text-rose-200"}
+              shadowClass={saldoLivreDoDia >= 0 ? "shadow-card-mint" : "shadow-card-coral"}
               icon={Wallet}
             />
           </div>
