@@ -20,6 +20,8 @@ export interface MovimentoReserva {
   dataReferencia: string;
   descricao: string | null;
   reservaNome: string;
+  /** Set when the withdrawal released the earmark to pay a commitment. */
+  compromissoNome: string | null;
 }
 
 export interface Transferencia {
@@ -53,6 +55,8 @@ export interface PainelFinanceiro {
   pagamentos: Pagamento[];
   /** Money in the fixed-bill reserves beyond the accrued daily rhythm. */
   adiantadoFixas: Cents;
+  /** Total paid toward commitments during the current month (all cycles). */
+  pagoMes: Cents;
 }
 
 /** Resolves the default establishment id (single-store app). */
@@ -78,6 +82,9 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   const estabelecimentoId = await getEstabelecimentoId();
   if (!estabelecimentoId) return null;
 
+  const hoje = todayISODate();
+  const { start: inicioMes, end: fimMes } = monthBounds(hoje.slice(0, 7));
+
   const [
     { data: saldos },
     { data: reservasRows },
@@ -85,6 +92,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     { data: movReservaRows },
     { data: transferenciasRows },
     { data: pagamentosRows },
+    { data: pagosMesRows },
   ] = await Promise.all([
     supabase
       .from("v_saldos_contas")
@@ -105,7 +113,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     supabase
       .from("movimentacoes_reservas")
       .select(
-        "id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras!movimentacoes_reservas_reserva_id_fkey(nome)",
+        "id, tipo, valor_centavos, data_referencia, descricao, reservas_financeiras!movimentacoes_reservas_reserva_id_fkey(nome), compromissos_financeiros!movimentacoes_reservas_compromisso_id_fkey(nome)",
       )
       .eq("estabelecimento_id", estabelecimentoId)
       .order("created_at", { ascending: false })
@@ -131,6 +139,18 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       )
       .order("created_at", { ascending: false })
       .limit(20),
+    // Every SAIDA leg linked to a compromisso inside the current month — the
+    // authoritative "already paid this month" figure, including payments on
+    // cycles that already rolled forward (valor_pago resets to zero on roll).
+    supabase
+      .from("movimentacoes_financeiras")
+      .select("compromisso_id, valor_centavos")
+      .eq("estabelecimento_id", estabelecimentoId)
+      .eq("tipo", "SAIDA")
+      .not("compromisso_id", "is", null)
+      .gte("data_referencia", inicioMes)
+      .lte("data_referencia", fimMes)
+      .is("deleted_at", null),
   ]);
 
   // v_saldos_contas already derives each account's current balance
@@ -181,8 +201,6 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
   // to that daily-rhythm target.
   type CompromissoRow = NonNullable<typeof compromissosRows>[number];
   const reservaSaldo = new Map(reservas.map((r) => [r.id, r.valorAtual]));
-  const hoje = todayISODate();
-  const fimMes = monthBounds(hoje.slice(0, 7)).end;
 
   const pendenteDe = (r: CompromissoRow) =>
     Math.max(
@@ -237,6 +255,20 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     adiantadoFixas += Math.max(0, restante);
   }
 
+  // Paid this month per compromisso — counts cycles that already rolled,
+  // where valor_pago went back to zero but the money did leave.
+  const pagoNoMesPorCompromisso = new Map<string, Cents>();
+  let pagoMes = 0;
+  for (const p of pagosMesRows ?? []) {
+    if (p.compromisso_id == null) continue;
+    const valor = p.valor_centavos ?? 0;
+    pagoNoMesPorCompromisso.set(
+      p.compromisso_id,
+      (pagoNoMesPorCompromisso.get(p.compromisso_id) ?? 0) + valor,
+    );
+    pagoMes += valor;
+  }
+
   const compromissos: Compromisso[] = (compromissosRows ?? []).map((c) => {
     const base: Compromisso = {
       id: c.id,
@@ -245,6 +277,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
       valorEfetivo: c.valor_efetivo_centavos ?? undefined,
       valorReservado: reservadoPorObrigacao.get(`comp:${c.id}`) ?? 0,
       valorPago: c.valor_pago_centavos ?? 0,
+      pagoNoMes: pagoNoMesPorCompromisso.get(c.id) ?? 0,
       // Monthly bills without a concrete due date are paid at month-end —
       // a null vencimento must never read as an already-past date.
       vencimento: c.vencimento ?? fimMes,
@@ -265,6 +298,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     dataReferencia: m.data_referencia,
     descricao: m.descricao,
     reservaNome: (m.reservas_financeiras as { nome?: string } | null)?.nome ?? "Reserva",
+    compromissoNome: (m.compromissos_financeiros as { nome?: string } | null)?.nome ?? null,
   }));
 
   const transferencias: Transferencia[] = (transferenciasRows ?? []).map((t) => ({
@@ -296,6 +330,7 @@ export const getPainelFinanceiro = async (): Promise<PainelFinanceiro | null> =>
     transferencias,
     pagamentos,
     adiantadoFixas,
+    pagoMes,
   };
 };
 

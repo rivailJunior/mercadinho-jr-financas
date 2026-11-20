@@ -8,7 +8,7 @@ interface FinancialDashboardProps {
 }
 
 export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
-  const { posicao, contas, reservas, compromissos, adiantadoFixas } = painel;
+  const { posicao, contas, reservas, compromissos, adiantadoFixas, pagoMes } = painel;
 
   const contaTon = painel.contas.filter((item) => {
     if (item.tipo === "BANCO") {
@@ -22,19 +22,30 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
 
   const contasFixas = [...compromissos].sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 
-  const totalPrevisto = contasFixas.reduce(
+  const totalPrevistoDeContasFixasMensal = contasFixas.reduce(
     (acc, c) => acc + (c.valorEfetivo ?? c.valorPrevisto),
     0,
   );
 
-  const totalArrecadado = contasFixas.reduce((acc, c) => acc + c.valorReservado + c.valorPago, 0);
+  // A compromisso that rolled to the next cycle reset valorPago to zero, but
+  // the payment still counts as money gathered this month — hence the max.
+  const totalArrecadado = contasFixas.reduce(
+    (acc, c) => acc + c.valorReservado + Math.max(c.valorPago, c.pagoNoMes ?? 0),
+    0,
+  );
 
-  const saldoComercio = contaTon ?? 0;
-  const pctAtingido = totalPrevisto > 0 ? saldoComercio / totalPrevisto : 0;
-  const faltaComercio = Math.max(0, totalPrevisto - saldoComercio);
+  const contaTonValue = contaTon ?? 0;
+
+  // Money already paid toward this month's bills counts as progress too —
+  // paying a bill from Conta do comércio must not lower the month's coverage.
+  const cobertoMes = contaTonValue + pagoMes;
+  const pctAtingido =
+    totalPrevistoDeContasFixasMensal > 0 ? cobertoMes / totalPrevistoDeContasFixasMensal : 0;
+
+  const faltaComercio = Math.max(0, totalPrevistoDeContasFixasMensal - cobertoMes);
 
   const totalSaldo = contas.reduce((acc, c) => acc + c.saldoAtual, 0);
-  const saldoLivreDoDia = (totalSaldo - saldoComercio) / 100;
+  const saldoLivreDoDia = (totalSaldo - contaTonValue) / 100;
 
   return (
     <div className="space-y-6">
@@ -92,8 +103,8 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           />
           <SummaryCardItem
             label="Total Reservado"
-            value={saldoComercio / 100}
-            subtitle="Conta Ton"
+            value={contaTonValue / 100}
+            subtitle="Envelopes"
             bgColor="bg-brand-blue"
             labelColor="text-indigo-100"
             subtitleColor="text-indigo-200"
@@ -116,7 +127,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             <SummaryCardItem
               label="Atingido do mês"
               value={pctAtingido}
-              subtitle={`Faltam ${formatCents(faltaComercio)} para alcançar ${formatCents(totalPrevisto)}`}
+              subtitle={`Faltam ${formatCents(faltaComercio)} para alcançar ${formatCents(totalPrevistoDeContasFixasMensal)}`}
               bgColor="bg-brand-blue"
               labelColor="text-indigo-100"
               subtitleColor="text-indigo-200"
@@ -138,7 +149,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             <PiggyBank className="h-5 w-5" aria-hidden="true" />
           </div>
           <h3 id="reservas-title" className="text-sm font-extrabold leading-snug text-slate-800">
-            Total Reservado - Conta Ton
+            Total Reservado - Envelopes
           </h3>
         </div>
         <ul className="space-y-3 border-t border-slate-100 pt-3">
@@ -220,12 +231,13 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
           )}
           {contasFixas.map((c) => {
             const total = c.valorEfetivo ?? c.valorPrevisto;
+            const falta = Math.max(0, total - c.valorPago);
             return (
               <li key={c.id} className="text-xs">
                 <div className="flex items-center justify-between py-0.5">
                   <span className="font-medium text-slate-600">{c.nome}</span>
                   <span className="tabular-nums font-bold text-slate-800">
-                    {formatCents(total)}
+                    {formatCents(falta)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between font-normal text-slate-400">
@@ -236,7 +248,10 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
                   ) : (
                     <span />
                   )}
-                  <span className="tabular-nums">{formatCents(Math.round(total / 30))}/dia</span>
+                  <span className="tabular-nums">
+                    {c.valorPago > 0 && `pago ${formatCents(c.valorPago)} · `}
+                    {formatCents(Math.round(total / 30))}/dia
+                  </span>
                 </div>
               </li>
             );
@@ -248,7 +263,7 @@ export const FinancialDashboard = ({ painel }: FinancialDashboardProps) => {
             <span className="tabular-nums font-bold text-slate-800">
               {formatCents(totalArrecadado)}
               <span className="font-normal text-slate-400"> de </span>
-              {formatCents(totalPrevisto)}
+              {formatCents(totalPrevistoDeContasFixasMensal)}
             </span>
           </div>
         )}

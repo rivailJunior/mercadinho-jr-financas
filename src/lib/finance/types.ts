@@ -59,6 +59,8 @@ export interface Compromisso {
   valorReservado: Cents;
   /** Amount already paid toward this commitment. */
   valorPago: Cents;
+  /** Paid during the current month, including rolled cycles. */
+  pagoNoMes?: Cents;
   /** Due date as an ISO YYYY-MM-DD string. */
   vencimento: string;
   prioridade: number;

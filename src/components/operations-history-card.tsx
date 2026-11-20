@@ -158,8 +158,12 @@ export const OperationsHistoryCard = ({
                   return (
                     <Row
                       key={m.id}
-                      title={m.descricao ?? m.reservaNome}
-                      subtitle={`${m.reservaNome} · ${formatData(m.dataReferencia)}`}
+                      title={m.descricao ?? m.compromissoNome ?? m.reservaNome}
+                      subtitle={
+                        m.compromissoNome
+                          ? `${m.reservaNome} → ${m.compromissoNome} · ${formatData(m.dataReferencia)}`
+                          : `${m.reservaNome} · ${formatData(m.dataReferencia)}`
+                      }
                     >
                       <span
                         className={cn(

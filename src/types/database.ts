@@ -351,6 +351,7 @@ export type Database = {
       };
       movimentacoes_reservas: {
         Row: {
+          compromisso_id: string | null;
           contraparte_reserva_id: string | null;
           created_at: string;
           data_referencia: string;
@@ -362,6 +363,7 @@ export type Database = {
           valor_centavos: number;
         };
         Insert: {
+          compromisso_id?: string | null;
           contraparte_reserva_id?: string | null;
           created_at?: string;
           data_referencia?: string;
@@ -373,6 +375,7 @@ export type Database = {
           valor_centavos: number;
         };
         Update: {
+          compromisso_id?: string | null;
           contraparte_reserva_id?: string | null;
           created_at?: string;
           data_referencia?: string;
@@ -384,6 +387,13 @@ export type Database = {
           valor_centavos?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_reservas_compromisso_id_fkey";
+            columns: ["compromisso_id"];
+            isOneToOne: false;
+            referencedRelation: "compromissos_financeiros";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "movimentacoes_reservas_contraparte_reserva_id_fkey";
             columns: ["contraparte_reserva_id"];
