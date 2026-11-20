@@ -110,14 +110,14 @@ export async function saveEntrada(input: {
 const saidaSchema = z.object({
   valor: z.number().positive(),
   descricao: z.string().optional(),
-  origem: z.enum(["ENTRADA_DIA", "SALDO_ACUMULADO"]),
+  conta: contaSchema,
   dataReferencia: z.string().optional(),
 });
 
 export async function saveSaida(input: {
   valor: number;
   descricao?: string;
-  origem: "ENTRADA_DIA" | "SALDO_ACUMULADO";
+  conta: "CAIXA_FISICO" | "MAQUININHA";
   dataReferencia?: string;
 }): Promise<SaveResult> {
   const parsed = saidaSchema.safeParse(input);
@@ -132,9 +132,7 @@ export async function saveSaida(input: {
   ]);
   if (!estabelecimentoId) return { ok: false, error: "Estabelecimento não encontrado." };
 
-  // O dinheiro sai fisicamente da gaveta nas duas origens; o que muda é só
-  // se o gasto desconta a entrada do dia ou o saldo acumulado.
-  const contaId = await getContaId(supabase, estabelecimentoId, "CAIXA_FISICO");
+  const contaId = await getContaId(supabase, estabelecimentoId, parsed.data.conta);
   if (!contaId) return { ok: false, error: "Conta financeira não encontrada." };
 
   const { error } = await supabase.from("movimentacoes_financeiras").insert({
@@ -145,7 +143,7 @@ export async function saveSaida(input: {
     natureza: "OPERACIONAL",
     valor_centavos: reaisToCents(parsed.data.valor),
     data_referencia: parsed.data.dataReferencia ?? todayISODate(),
-    origem_saida: parsed.data.origem,
+    origem_saida: "ENTRADA_DIA",
     descricao: parsed.data.descricao?.trim() || "Despesa avulsa",
   });
 

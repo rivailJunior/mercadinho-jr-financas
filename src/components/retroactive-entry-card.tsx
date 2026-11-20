@@ -6,12 +6,10 @@ import {
   type ContaOpcao,
   ContaSelector,
   QUICK_EXPENSE_TAGS,
-  SAIDA_ORIGEM_OPCOES,
 } from "@/components/cash-entry-card";
 import { CurrencyInput } from "@/components/currency-input";
 import { daysAgoISODate, formatShortISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import type { SaidaOrigem } from "@/types/cashClosing";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -29,7 +27,7 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
   const [tipo, setTipo] = useState<TipoMovimentacao>("entrada");
   const [valor, setValor] = useState(0);
   const [entradaConta, setEntradaConta] = useState<ContaOpcao>("CAIXA_FISICO");
-  const [saidaOrigem, setSaidaOrigem] = useState<SaidaOrigem>("ENTRADA_DIA");
+  const [saidaConta, setSaidaConta] = useState<ContaOpcao>("CAIXA_FISICO");
   const [descricao, setDescricao] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +37,7 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
     setValor(0);
     setTipo("entrada");
     setEntradaConta("CAIXA_FISICO");
-    setSaidaOrigem("ENTRADA_DIA");
+    setSaidaConta("CAIXA_FISICO");
     setDescricao("");
     setError(null);
   }, []);
@@ -50,7 +48,12 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
     const result =
       tipo === "entrada"
         ? await saveEntrada({ total: valor, conta: entradaConta, dataReferencia: data })
-        : await saveSaida({ valor, descricao, origem: saidaOrigem, dataReferencia: data });
+        : await saveSaida({
+            valor,
+            descricao,
+            conta: saidaConta,
+            dataReferencia: data,
+          });
     setIsSaving(false);
     if (!result.ok) {
       setError(result.error ?? "Erro ao salvar lancamento.");
@@ -59,7 +62,7 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
     router.refresh();
     onClose();
     handleReset();
-  }, [data, tipo, valor, entradaConta, saidaOrigem, descricao, router, onClose, handleReset]);
+  }, [data, tipo, valor, entradaConta, saidaConta, descricao, router, onClose, handleReset]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -249,9 +252,9 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
 
             <ContaSelector
               label="De onde saiu?"
-              options={SAIDA_ORIGEM_OPCOES}
-              value={saidaOrigem}
-              onChange={setSaidaOrigem}
+              options={CONTA_OPCOES}
+              value={saidaConta}
+              onChange={setSaidaConta}
             />
 
             <div className="space-y-1.5">
@@ -284,9 +287,7 @@ export const RetroactiveEntryCard = ({ isOpen, onClose }: RetroactiveEntryCardPr
             </div>
 
             <p className="text-center text-xs font-medium text-slate-400">
-              {saidaOrigem === "SALDO_ACUMULADO"
-                ? "Sai do saldo acumulado — não altera a sobra do dia."
-                : "Deduz automaticamente da sobra limpa do dia."}
+              Deduz automaticamente da sobra limpa do dia.
             </p>
           </>
         )}

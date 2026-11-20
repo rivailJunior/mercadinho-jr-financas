@@ -3,7 +3,7 @@
 import { CurrencyInput } from "@/components/currency-input";
 import { formatShortISODate, todayISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import type { CashEntry, SaidaOrigem } from "@/types/cashClosing";
+import type { CashEntry } from "@/types/cashClosing";
 import { CheckCircle } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -23,11 +23,6 @@ export const CONTA_OPCOES: { id: ContaOpcao; label: string }[] = [
   { id: "MAQUININHA", label: "Maquininha / Pix" },
 ];
 
-export const SAIDA_ORIGEM_OPCOES: { id: SaidaOrigem; label: string }[] = [
-  { id: "ENTRADA_DIA", label: "Entrada do dia" },
-  { id: "SALDO_ACUMULADO", label: "Saldo acumulado" },
-];
-
 interface CashEntryCardProps {
   cashValues: CashEntry;
   onCashChange: (values: CashEntry) => void;
@@ -37,8 +32,8 @@ interface CashEntryCardProps {
   onExpenseDescriptionChange: (description: string) => void;
   entradaConta: ContaOpcao;
   onEntradaContaChange: (conta: ContaOpcao) => void;
-  saidaOrigem: SaidaOrigem;
-  onSaidaOrigemChange: (origem: SaidaOrigem) => void;
+  saidaConta: ContaOpcao;
+  onSaidaContaChange: (conta: ContaOpcao) => void;
   onSaveEntrada: () => void;
   onSaveSaida: () => void;
   isSaving: boolean;
@@ -85,8 +80,8 @@ export const CashEntryCard = ({
   onExpenseDescriptionChange,
   entradaConta,
   onEntradaContaChange,
-  saidaOrigem,
-  onSaidaOrigemChange,
+  saidaConta,
+  onSaidaContaChange,
   onSaveEntrada,
   onSaveSaida,
   isSaving,
@@ -211,9 +206,9 @@ export const CashEntryCard = ({
 
           <ContaSelector
             label="De onde saiu?"
-            options={SAIDA_ORIGEM_OPCOES}
-            value={saidaOrigem}
-            onChange={onSaidaOrigemChange}
+            options={CONTA_OPCOES}
+            value={saidaConta}
+            onChange={onSaidaContaChange}
           />
 
           <div className="space-y-1.5">
@@ -256,9 +251,7 @@ export const CashEntryCard = ({
               {isSaving ? "Salvando..." : "Salvar Saída do Caixa (-)"}
             </button>
             <p className="mt-2 text-center text-xs font-medium text-slate-400">
-              {saidaOrigem === "SALDO_ACUMULADO"
-                ? "Sai do saldo acumulado — não altera a sobra do dia."
-                : "Deduz automaticamente da sobra limpa do dia."}
+              Deduz automaticamente da sobra limpa do dia.
             </p>
           </div>
         </div>
